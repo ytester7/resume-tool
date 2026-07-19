@@ -1,0 +1,74 @@
+import { describe, it, expect } from 'vitest';
+import { parseResumeFile } from './parseResume';
+import type { ResumeData } from '@/types/resume';
+
+const baseValid: ResumeData = {
+  name: '张三', title: '测试', phone: '138', email: 'a@b.com',
+  age: '30', experienceYears: '5', jobIntention: '测试', salary: '20k',
+  github: '', website: '', summary: '',
+  skills: [], experience: [], projects: [], education: [],
+  evaluation: [{ text: 'x' }],
+};
+
+describe('parseResumeFile', () => {
+  it('新版格式含 _meta 正常解析', () => {
+    const raw = { ...baseValid, _meta: { template: 'modern', sectionOrder: ['skills','summary'], savedAt: '2026-07-18', version: '2.0' } };
+    const result = parseResumeFile(raw);
+    expect(result.data.name).toBe('张三');
+    expect(result.template).toBe('modern');
+    expect(result.sectionOrder).toEqual(['skills','summary']);
+  });
+
+  it('旧版无 _meta 默认 classic + null sectionOrder', () => {
+    const raw = { ...baseValid };
+    const result = parseResumeFile(raw);
+    expect(result.template).toBe('classic');
+    expect(result.sectionOrder).toBe(null);
+  });
+
+  it('旧版 evaluation 字符串自动转数组', () => {
+    const raw = { ...baseValid, evaluation: '我是测试工程师' };
+    delete (raw as any)._meta;
+    const result = parseResumeFile(raw);
+    expect(result.data.evaluation).toEqual([
+      { text: '' },
+      { text: '我是测试工程师' },
+      { text: '' },
+    ]);
+  });
+
+  it('非法模板名回退到 classic', () => {
+    const raw = { ...baseValid, _meta: { template: 'not-exist', sectionOrder: null, savedAt: '', version: '2.0' } };
+    const result = parseResumeFile(raw);
+    expect(result.template).toBe('classic');
+  });
+
+  it('sectionOrder 非数组时为 null', () => {
+    const raw = { ...baseValid, _meta: { template: 'classic', sectionOrder: 'invalid', savedAt: '', version: '2.0' } };
+    const result = parseResumeFile(raw);
+    expect(result.sectionOrder).toBe(null);
+  });
+
+  it('skills 非数组时为空数组', () => {
+    const raw = { ...baseValid, skills: 'invalid' };
+    const result = parseResumeFile(raw);
+    expect(result.data.skills).toEqual([]);
+  });
+
+  it('null 输入抛 ResumeParseError', () => {
+    expect(() => parseResumeFile(null)).toThrow(/不是对象/);
+  });
+
+  it('非对象输入抛 ResumeParseError', () => {
+    expect(() => parseResumeFile('string')).toThrow(/不是对象/);
+  });
+
+  it('字段缺失用默认空值填充', () => {
+    const raw = { name: '李四' };
+    const result = parseResumeFile(raw);
+    expect(result.data.name).toBe('李四');
+    expect(result.data.title).toBe('');
+    expect(result.data.skills).toEqual([]);
+    expect(result.data.evaluation).toEqual([{ text: '' }, { text: '' }, { text: '' }]);
+  });
+});
