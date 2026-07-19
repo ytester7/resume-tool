@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseResumeFile } from './parseResume';
+import { parseResumeFile, serializeResume } from './parseResume';
 import type { ResumeData } from '@/types/resume';
 
 const baseValid: ResumeData = {
@@ -70,5 +70,31 @@ describe('parseResumeFile', () => {
     expect(result.data.title).toBe('');
     expect(result.data.skills).toEqual([]);
     expect(result.data.evaluation).toEqual([{ text: '' }, { text: '' }, { text: '' }]);
+  });
+});
+
+describe('serializeResume', () => {
+  it('序列化包含 _meta 字段', () => {
+    const json = serializeResume(baseValid, 'modern', ['skills', 'summary']);
+    const parsed = JSON.parse(json);
+    expect(parsed.name).toBe('张三');
+    expect(parsed._meta.template).toBe('modern');
+    expect(parsed._meta.sectionOrder).toEqual(['skills', 'summary']);
+    expect(parsed._meta.version).toBe('2.0');
+    expect(typeof parsed._meta.savedAt).toBe('string');
+  });
+
+  it('sectionOrder 为 null 时正常序列化', () => {
+    const json = serializeResume(baseValid, 'classic', null);
+    const parsed = JSON.parse(json);
+    expect(parsed._meta.sectionOrder).toBe(null);
+  });
+
+  it('可被 parseResumeFile 往返解析', () => {
+    const json = serializeResume(baseValid, 'qa-pro', ['education', 'skills']);
+    const result = parseResumeFile(JSON.parse(json));
+    expect(result.data.name).toBe('张三');
+    expect(result.template).toBe('qa-pro');
+    expect(result.sectionOrder).toEqual(['education', 'skills']);
   });
 });
