@@ -1,11 +1,17 @@
 <script setup lang="ts">
-const msg = '脚手架就绪';
+import PreviewPanel from '@/components/PreviewPanel.vue';
+import { useTabsStore } from '@/stores/tabs';
+import { defaultResumeData } from '@/types/resume';
+
+const tabs = useTabsStore();
+tabs.open({ title: '测试', data: { ...defaultResumeData(), name: '张三', title: '测试工程师' } });
 </script>
 
 <template>
-  <div class="app-placeholder">{{ msg }}</div>
+  <div style="display: flex; height: 100vh;">
+    <div style="flex: 0 0 300px; padding: 16px;">编辑区（待实现）</div>
+    <div style="flex: 1;">
+      <PreviewPanel />
+    </div>
+  </div>
 </template>
-
-<style scoped>
-.app-placeholder { padding: 40px; font-size: 20px; }
-</style>
