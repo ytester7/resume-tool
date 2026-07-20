@@ -76,7 +76,7 @@ describe('Toast', () => {
 
   it('点击 toast 项触发 dismiss', async () => {
     const ui = useUiStore();
-    ui.toastInfo('可关闭', 'info', 60000);
+    ui.toast('可关闭', 'info', 60000);
     const wrapper = mount(Toast);
     expect(wrapper.findAll('.toast-item')).toHaveLength(1);
     await wrapper.find('.toast-item').trigger('click');
