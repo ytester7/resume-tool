@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { flushPromises } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import PreviewPanel from './PreviewPanel.vue';
 import { useTabsStore } from '@/stores/tabs';
-import { defaultResumeData } from '@/types/resume';
+import { defaultResumeData, TEMPLATE_LIST } from '@/types/resume';
+import type { TemplateName } from '@/types/resume';
 
 describe('PreviewPanel', () => {
   beforeEach(() => {
@@ -21,4 +23,21 @@ describe('PreviewPanel', () => {
     const wrapper = mount(PreviewPanel);
     expect(wrapper.find('.preview-canvas').exists()).toBe(true);
   });
+});
+
+describe('PreviewPanel 13 模板切换', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it.each(TEMPLATE_LIST.map(t => [t.name, t.name] as [TemplateName, string]))(
+    '切换到 %s 模板不报错',
+    async (tpl) => {
+      const tabs = useTabsStore();
+      tabs.open({ title: 'A', template: tpl, data: { ...defaultResumeData(), name: '张三' } });
+      const wrapper = mount(PreviewPanel);
+      await flushPromises();
+      expect(wrapper.find('.preview-canvas').exists()).toBe(true);
+    },
+  );
 });

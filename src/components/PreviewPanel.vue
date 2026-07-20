@@ -8,21 +8,21 @@ import type { TemplateName } from '@/types/resume';
 const tabs = useTabsStore();
 const { order, mutable } = useSectionOrder();
 
-// 模板组件映射（懒加载）；阶段 5 替换为真实模板组件
+// 模板组件映射（懒加载）
 const templateComponents: Record<TemplateName, () => Promise<any>> = {
-  classic: () => import('@/components/templates/ClassicLayout.vue'),
-  modern: () => import('@/components/templates/ClassicLayout.vue'),
-  creative: () => import('@/components/templates/ClassicLayout.vue'),
-  tech: () => import('@/components/templates/ClassicLayout.vue'),
-  'data-driven': () => import('@/components/templates/ClassicLayout.vue'),
-  'qa-pro': () => import('@/components/templates/ClassicLayout.vue'),
-  minimal: () => import('@/components/templates/ClassicLayout.vue'),
-  gradient: () => import('@/components/templates/ClassicLayout.vue'),
-  executive: () => import('@/components/templates/ClassicLayout.vue'),
-  european: () => import('@/components/templates/ClassicLayout.vue'),
-  'tech-gradient': () => import('@/components/templates/ClassicLayout.vue'),
-  'card-style': () => import('@/components/templates/ClassicLayout.vue'),
-  'chinese-elegant': () => import('@/components/templates/ClassicLayout.vue'),
+  classic:           () => import('@/components/templates/ClassicLayout.vue'),
+  minimal:           () => import('@/components/templates/MinimalLayout.vue'),
+  gradient:          () => import('@/components/templates/GradientLayout.vue'),
+  creative:          () => import('@/components/templates/CreativeLayout.vue'),
+  'data-driven':     () => import('@/components/templates/DataDrivenLayout.vue'),
+  'qa-pro':          () => import('@/components/templates/QaProLayout.vue'),
+  'card-style':      () => import('@/components/templates/CardStyleLayout.vue'),
+  'chinese-elegant': () => import('@/components/templates/ChineseElegantLayout.vue'),
+  modern:            () => import('@/components/templates/ModernLayout.vue'),
+  executive:         () => import('@/components/templates/ExecutiveLayout.vue'),
+  european:          () => import('@/components/templates/EuropeanLayout.vue'),
+  tech:              () => import('@/components/templates/TechLayout.vue'),
+  'tech-gradient':   () => import('@/components/templates/TechGradientLayout.vue'),
 };
 
 const currentComponent = computed(() => {
