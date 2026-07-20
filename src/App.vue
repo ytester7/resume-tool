@@ -1,17 +1,145 @@
 <script setup lang="ts">
-import PreviewPanel from '@/components/PreviewPanel.vue';
+import { onMounted } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
-import { defaultResumeData } from '@/types/resume';
+import { useFileSystemStore } from '@/stores/fileSystem';
+import { useUiStore } from '@/stores/ui';
+import { useAutoSave } from '@/composables/useAutoSave';
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
+import { useStartupRecovery } from '@/composables/useStartupRecovery';
+import { parseResumeFile, serializeResume } from '@/utils/parseResume';
+import { sanitizeFilename } from '@/utils/sanitize';
+import Toolbar from '@/components/Toolbar.vue';
+import TabBar from '@/components/TabBar.vue';
+import EditorPanel from '@/components/EditorPanel.vue';
+import PreviewPanel from '@/components/PreviewPanel.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Toast from '@/components/Toast.vue';
 
 const tabs = useTabsStore();
-tabs.open({ title: '测试', data: { ...defaultResumeData(), name: '张三', title: '测试工程师' } });
+const fs = useFileSystemStore();
+const ui = useUiStore();
+const { recoverOrphanedTabs } = useStartupRecovery();
+
+useAutoSave();
+
+function onNew() {
+  tabs.open({ title: '未命名' });
+  ui.toastInfo('已新建简历');
+}
+
+async function onOpen() {
+  try {
+    const result = await fs.pickOpenFile();
+    if (!result) return;
+    const parsed = parseResumeFile(result.data);
+    tabs.open({
+      title: result.fileName.replace(/\.json$/i, ''),
+      data: parsed.data,
+      template: parsed.template,
+      sectionOrder: parsed.sectionOrder,
+      fileHandle: result.handle ?? null,
+      dirty: false,
+    });
+    ui.toastSuccess(`已加载 ${result.fileName}`);
+  } catch (e: any) {
+    ui.toastError('打开失败: ' + e.message);
+  }
+}
+
+async function onSave() {
+  if (!tabs.active) return ui.toastWarning('没有打开的简历');
+  const tab = tabs.active;
+  let handle = tab.fileHandle;
+  if (!handle) {
+    const name = sanitizeFilename(tab.data.name || tab.title) + '-简历.json';
+    handle = await fs.pickSaveFile(name);
+    if (!handle) return;
+    tab.fileHandle = handle;
+  }
+  const content = serializeResume(tab.data, tab.template, tab.sectionOrder);
+  const ok = await fs.writeToFile(handle, content);
+  if (ok) {
+    tab.dirty = false;
+    ui.toastSuccess('保存成功');
+  } else {
+    ui.toastError('保存失败');
+  }
+}
+
+async function onSaveAs() {
+  if (!tabs.active) return ui.toastWarning('没有打开的简历');
+  const tab = tabs.active;
+  const name = sanitizeFilename(tab.data.name || tab.title) + '-简历.json';
+  const handle = await fs.pickSaveFile(name);
+  if (!handle) return;
+  const content = serializeResume(tab.data, tab.template, tab.sectionOrder);
+  const ok = await fs.writeToFile(handle, content);
+  if (ok) {
+    tab.fileHandle = handle;
+    tab.dirty = false;
+    ui.toastSuccess('另存为成功');
+  } else {
+    ui.toastError('另存为失败');
+  }
+}
+
+async function onExportPdf() {
+  if (!tabs.active) return ui.toastWarning('没有打开的简历');
+  ui.toastInfo('PDF 导出功能将在阶段 7 实现');
+}
+
+useKeyboardShortcuts({ onNew, onOpen, onSave, onSaveAs, onExportPdf });
+
+onMounted(async () => {
+  await recoverOrphanedTabs();
+  if (tabs.tabs.length === 0) {
+    tabs.open({ title: '未命名' });
+  }
+});
 </script>
 
 <template>
-  <div style="display: flex; height: 100vh;">
-    <div style="flex: 0 0 300px; padding: 16px;">编辑区（待实现）</div>
-    <div style="flex: 1;">
-      <PreviewPanel />
-    </div>
+  <div class="app-root">
+    <Toolbar
+      :on-new="onNew"
+      :on-open="onOpen"
+      :on-save="onSave"
+      :on-save-as="onSaveAs"
+      :on-export-pdf="onExportPdf"
+    />
+    <TabBar />
+    <main class="app-main">
+      <aside class="app-editor">
+        <EditorPanel v-if="tabs.active" />
+        <div v-else class="empty-editor">
+          <p>请点击"新建"创建简历，或"打开"加载已有文件</p>
+        </div>
+      </aside>
+      <section class="app-preview">
+        <PreviewPanel />
+      </section>
+    </main>
+    <ConfirmDialog />
+    <Toast />
   </div>
 </template>
+
+<style scoped>
+.app-root {
+  display: flex; flex-direction: column;
+  height: 100vh; overflow: hidden;
+}
+.app-main {
+  display: grid; grid-template-columns: 380px 1fr;
+  flex: 1; overflow: hidden;
+}
+.app-editor {
+  border-right: 1px solid #e8e8e8;
+  overflow: auto; background: #fff;
+}
+.app-preview { overflow: hidden; background: #f0f2f5; }
+.empty-editor {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: #999; padding: 40px; text-align: center;
+}
+</style>
