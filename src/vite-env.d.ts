@@ -12,6 +12,19 @@ declare module 'vuedraggable' {
   export default draggable;
 }
 
+declare module 'html2pdf.js' {
+  interface Html2PdfWorker {
+    set(options: any): this;
+    from(element: HTMLElement): this;
+    save(): Promise<void>;
+    output(type: string): Promise<any>;
+    toPdf(): this;
+    get(type: string): Promise<any>;
+  }
+  function html2pdf(): Html2PdfWorker;
+  export default html2pdf;
+}
+
 interface FileSystemFileHandle {
   getFile(): Promise<File>;
   createWritable(): Promise<FileSystemWritableFileStream>;

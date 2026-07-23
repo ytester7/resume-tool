@@ -6,6 +6,7 @@ import { useUiStore } from '@/stores/ui';
 import { useAutoSave } from '@/composables/useAutoSave';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useStartupRecovery } from '@/composables/useStartupRecovery';
+import { usePdfExport } from '@/composables/usePdfExport';
 import { parseResumeFile, serializeResume } from '@/utils/parseResume';
 import { sanitizeFilename } from '@/utils/sanitize';
 import Toolbar from '@/components/Toolbar.vue';
@@ -19,6 +20,7 @@ const tabs = useTabsStore();
 const fs = useFileSystemStore();
 const ui = useUiStore();
 const { recoverOrphanedTabs } = useStartupRecovery();
+const { exportActiveToPdf } = usePdfExport();
 
 useAutoSave();
 
@@ -85,7 +87,10 @@ async function onSaveAs() {
 
 async function onExportPdf() {
   if (!tabs.active) return ui.toastWarning('没有打开的简历');
-  ui.toastInfo('PDF 导出功能将在阶段 7 实现');
+  // 通过 DOM 查询获取 PreviewPanel 内的 .preview-canvas 元素
+  const canvas = document.querySelector('.preview-canvas') as HTMLElement | null;
+  if (!canvas) return ui.toastError('预览区未就绪');
+  await exportActiveToPdf(canvas);
 }
 
 useKeyboardShortcuts({ onNew, onOpen, onSave, onSaveAs, onExportPdf });
