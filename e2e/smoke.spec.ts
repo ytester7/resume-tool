@@ -14,19 +14,7 @@ test('启动时自动创建未命名 Tab', async ({ page }) => {
   await expect(page.locator('.tab-item').first()).toContainText('未命名');
 });
 
-// 跳过原因（应用 bug，非测试代码问题）：
-// src/components/PreviewPanel.vue 的 templateComponents 使用裸函数
-// `() => import(...)` 直接传给 `<component :is>`，Vue 3 不会自动将其识别为异步组件
-// （必须用 defineAsyncComponent 包装），而是当作函数式组件调用，返回的 Promise 被
-// 渲染成文本 "[object Promise]"。真实浏览器中预览区完全不渲染模板内容。
-// 已通过 Chrome DevTools 确证：.preview-canvas 的 innerHTML 为 "[object Promise]"，
-// 且 ClassicLayout.vue 模块已成功加载（200），说明问题出在 Vue 对异步组件的识别。
-// 修复方向（不在本任务范围内，应用代码不修改）：
-//   import { defineAsyncComponent } from 'vue';
-//   classic: defineAsyncComponent(() => import('@/components/templates/ClassicLayout.vue'))
-// 单元测试 PreviewPanel.spec.ts 未能发现此 bug，因其只断言 .preview-canvas 元素存在，
-// 未检查渲染内容。
-test.skip('编辑基本信息反映到预览', async ({ page }) => {
+test('编辑基本信息反映到预览', async ({ page }) => {
   await page.goto('/');
   // 等待编辑器加载
   await page.waitForSelector('input[placeholder="请输入姓名"]');

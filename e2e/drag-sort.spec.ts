@@ -1,10 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// 跳过原因（应用 bug）：预览区渲染 "[object Promise]"，详见 smoke.spec.ts 中
-// "编辑基本信息反映到预览" 的注释。PreviewPanel.vue 未用 defineAsyncComponent 包装
-// 异步模板组件，导致真实浏览器中预览不渲染内容。本测试的预览断言因此无法通过。
-// 编辑器交互部分（添加技能行、填写输入）本身工作正常。
-test.skip('技能列表添加与编辑', async ({ page }) => {
+test('技能列表添加与编辑', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('text=专业技能');
   // 点击添加技能按钮
@@ -27,10 +23,7 @@ test('区块顺序面板拖拽（手动验证占位）', async ({ page }) => {
   // 真实拖拽测试通过单元测试 DraggableList 覆盖
 });
 
-// 跳过原因（应用 bug）：同上，预览区渲染 "[object Promise]"，PreviewPanel.vue
-// 异步组件未用 defineAsyncComponent 包装。编辑器交互部分（添加工作经历、添加工作
-// 内容子项、填写输入）本身工作正常，仅预览内容断言无法通过。
-test.skip('工作经历卡片内子项独立排序', async ({ page }) => {
+test('工作经历卡片内子项独立排序', async ({ page }) => {
   await page.goto('/');
   await page.waitForSelector('text=工作经历');
   // 添加工作经历

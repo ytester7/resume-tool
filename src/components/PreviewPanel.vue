@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, defineAsyncComponent, type Component } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import { useSectionOrder } from '@/composables/useSectionOrder';
 import { TEMPLATE_REGISTRY } from '@/types/resume';
@@ -8,21 +8,21 @@ import type { TemplateName } from '@/types/resume';
 const tabs = useTabsStore();
 const { order, mutable } = useSectionOrder();
 
-// 模板组件映射（懒加载）
-const templateComponents: Record<TemplateName, () => Promise<any>> = {
-  classic:           () => import('@/components/templates/ClassicLayout.vue'),
-  minimal:           () => import('@/components/templates/MinimalLayout.vue'),
-  gradient:          () => import('@/components/templates/GradientLayout.vue'),
-  creative:          () => import('@/components/templates/CreativeLayout.vue'),
-  'data-driven':     () => import('@/components/templates/DataDrivenLayout.vue'),
-  'qa-pro':          () => import('@/components/templates/QaProLayout.vue'),
-  'card-style':      () => import('@/components/templates/CardStyleLayout.vue'),
-  'chinese-elegant': () => import('@/components/templates/ChineseElegantLayout.vue'),
-  modern:            () => import('@/components/templates/ModernLayout.vue'),
-  executive:         () => import('@/components/templates/ExecutiveLayout.vue'),
-  european:          () => import('@/components/templates/EuropeanLayout.vue'),
-  tech:              () => import('@/components/templates/TechLayout.vue'),
-  'tech-gradient':   () => import('@/components/templates/TechGradientLayout.vue'),
+// 模板组件映射（defineAsyncComponent 懒加载）
+const templateComponents: Record<TemplateName, Component> = {
+  classic:           defineAsyncComponent(() => import('@/components/templates/ClassicLayout.vue')),
+  minimal:           defineAsyncComponent(() => import('@/components/templates/MinimalLayout.vue')),
+  gradient:          defineAsyncComponent(() => import('@/components/templates/GradientLayout.vue')),
+  creative:          defineAsyncComponent(() => import('@/components/templates/CreativeLayout.vue')),
+  'data-driven':     defineAsyncComponent(() => import('@/components/templates/DataDrivenLayout.vue')),
+  'qa-pro':          defineAsyncComponent(() => import('@/components/templates/QaProLayout.vue')),
+  'card-style':      defineAsyncComponent(() => import('@/components/templates/CardStyleLayout.vue')),
+  'chinese-elegant': defineAsyncComponent(() => import('@/components/templates/ChineseElegantLayout.vue')),
+  modern:            defineAsyncComponent(() => import('@/components/templates/ModernLayout.vue')),
+  executive:         defineAsyncComponent(() => import('@/components/templates/ExecutiveLayout.vue')),
+  european:          defineAsyncComponent(() => import('@/components/templates/EuropeanLayout.vue')),
+  tech:              defineAsyncComponent(() => import('@/components/templates/TechLayout.vue')),
+  'tech-gradient':   defineAsyncComponent(() => import('@/components/templates/TechGradientLayout.vue')),
 };
 
 const currentComponent = computed(() => {
