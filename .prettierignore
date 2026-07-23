@@ -1,0 +1,6 @@
+dist/
+node_modules/
+resume-builder/
+coverage/
+playwright-report/
+*.min.js

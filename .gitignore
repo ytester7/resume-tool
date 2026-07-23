@@ -2,6 +2,12 @@
 my-resume/
 resume-docs/
 
+# === 原始旧代码（仅供迁移参考，不纳入仓库） ===
+resume-builder/
+
+# === 内部开发文档（开发计划/设计文档，非用户文档） ===
+docs/superpowers/
+
 # === Node.js / 包管理 ===
 node_modules/
 npm-debug.log*
