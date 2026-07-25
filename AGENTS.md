@@ -108,7 +108,23 @@ npm run build                 # 构建，成功
 npx playwright test           # E2E 测试，全绿
 ```
 
-## Commit 规范
+## Git 工作流
+
+采用 GitHub Flow，完整规范见 [`.github/GIT_WORKFLOW.md`](./.github/GIT_WORKFLOW.md)。
+
+### 分支策略
+
+| 分支 | 用途 | 命名 |
+|---|---|---|
+| `main` | 生产分支 | 固定，禁止 force push |
+| `feat/*` | 新功能 | `feat/<描述>` |
+| `fix/*` | Bug 修复 | `fix/<描述>` |
+| `docs/*` | 文档 | `docs/<描述>` |
+| `hotfix/*` | 紧急修复 | `hotfix/<描述>` |
+
+合并策略：默认 **Squash and merge**，合并后删除分支。
+
+### Commit 规范
 
 Conventional Commits 格式：
 
