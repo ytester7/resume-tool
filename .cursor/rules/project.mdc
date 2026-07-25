@@ -1,0 +1,54 @@
+---
+description: resume-tool 项目编码约束 — 所有 AI 代码生成必须遵循
+globs:
+  - "src/**/*"
+  - "e2e/**/*"
+  - "*.ts"
+  - "*.vue"
+alwaysApply: true
+---
+
+# resume-tool 项目约束
+
+> 完整规范见仓库根目录 `AGENTS.md`。以下为关键要点。
+
+## 技术栈
+
+Vue 3 `<script setup lang="ts">` + Vite + Pinia + vuedraggable + Vitest + Playwright。
+路径别名：`@/` → `src/`。
+
+## 分层架构（禁止逆向依赖）
+
+```
+types → utils → stores → composables → components → App
+```
+
+## 代码规范
+
+- TypeScript strict + noUnusedLocals + noUnusedParameters
+- 异步组件必须用 `defineAsyncComponent(() => import(...))` 包装，禁止裸函数
+- 禁止 `any`（除非有注释说明），禁止 `@ts-ignore`
+- Vue 组件用 `<script setup lang="ts">`，Props 用 `defineProps<{ ... }>()`
+- Pinia 用 Setup Store 风格（`defineStore('name', () => { ... })`）
+
+## 测试要求
+
+- 新增功能必须附带 `*.spec.ts` 单元测试，覆盖率 ≥ 80%
+- TDD 流程：先写测试 → 确认失败 → 实现 → 确认通过
+- 涉及预览/模板/编辑器交互时运行 `npx playwright test`
+
+## 验证命令（修改后必须全部通过）
+
+```bash
+npx vue-tsc --noEmit
+npx vitest run
+npx eslint src/ e2e/
+npm run build
+```
+
+## 禁止事项
+
+1. 禁止修改 `resume-builder/` 和 `docs/superpowers/`
+2. 禁止删除已有测试来让构建通过
+3. 禁止在模板中用裸函数 `() => import(...)` 作为异步组件
+4. Commit 用 Conventional Commits（feat/fix/test/docs/refactor/chore）
