@@ -21,24 +21,20 @@ function update(idx: number, value: string) {
   <section class="editor-section">
     <h3 class="section-heading">自我评价</h3>
     <div v-for="(item, idx) in (tabs.active?.data.evaluation ?? [])" :key="idx" class="eval-item">
-      <label class="eval-label">{{ LABELS[idx] || `段落 ${idx + 1}` }}</label>
+      <label class="eval-label" :for="`eval-textarea-${idx}`">{{ LABELS[idx] || `段落 ${idx + 1}` }}</label>
       <textarea
+        :id="`eval-textarea-${idx}`"
         :value="item.text"
-        @input="update(idx, ($event.target as HTMLTextAreaElement).value)"
         :placeholder="PLACEHOLDERS[idx] || '请输入...'"
         rows="2"
         class="eval-textarea"
+        @input="update(idx, ($event.target as HTMLTextAreaElement).value)"
       />
     </div>
   </section>
 </template>
 
 <style scoped>
-.editor-section { margin-bottom: 24px; }
-.section-heading {
-  margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #1890ff;
-  padding-bottom: 6px; border-bottom: 1px solid #e8e8e8;
-}
 .eval-item { margin-bottom: 10px; }
 .eval-label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
 .eval-textarea {

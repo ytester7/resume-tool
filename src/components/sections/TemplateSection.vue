@@ -3,13 +3,32 @@ import { computed } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import { TEMPLATE_LIST } from '@/types/resume';
 import type { TemplateName } from '@/types/resume';
+import { COLOR_PRESETS, FONT_PRESETS } from '@/utils/theme';
 
 const tabs = useTabsStore();
 
 const currentTemplate = computed(() => tabs.active?.template ?? 'classic');
+const primaryColor = computed(() => tabs.active?.theme?.primaryColor ?? '');
+const fontFamily = computed(() => tabs.active?.theme?.fontFamily ?? '');
 
 function select(name: TemplateName) {
   tabs.setTemplate(name);
+}
+
+function selectColor(color: string) {
+  tabs.setTheme({ primaryColor: color, fontFamily: fontFamily.value });
+}
+
+function onColorInput(e: Event) {
+  selectColor((e.target as HTMLInputElement).value);
+}
+
+function selectFont(value: string) {
+  tabs.setTheme({ primaryColor: primaryColor.value, fontFamily: value });
+}
+
+function resetTheme() {
+  tabs.setTheme(null);
 }
 
 const categories = [
@@ -38,14 +57,41 @@ const categories = [
       </div>
     </div>
   </section>
+
+  <section class="editor-section">
+    <h3 class="section-heading">主题设置</h3>
+    <div class="theme-row">
+      <span class="theme-label">主色</span>
+      <div class="color-swatches">
+        <button
+          v-for="c in COLOR_PRESETS"
+          :key="c"
+          class="swatch"
+          :style="{ background: c }"
+          :class="{ active: primaryColor === c }"
+          :aria-label="`选择主色 ${c}`"
+          @click="selectColor(c)"
+        />
+        <input
+          type="color"
+          class="color-picker"
+          :value="primaryColor || '#1890ff'"
+          aria-label="自定义主色"
+          @input="onColorInput"
+        />
+      </div>
+    </div>
+    <div class="theme-row">
+      <label class="theme-label" for="font-select">字体</label>
+      <select id="font-select" class="font-select" :value="fontFamily" @change="selectFont(($event.target as HTMLSelectElement).value)">
+        <option v-for="f in FONT_PRESETS" :key="f.label" :value="f.value">{{ f.label }}</option>
+      </select>
+    </div>
+    <button class="reset-theme" @click="resetTheme">恢复默认主题</button>
+  </section>
 </template>
 
 <style scoped>
-.editor-section { margin-bottom: 24px; }
-.section-heading {
-  margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #1890ff;
-  padding-bottom: 6px; border-bottom: 1px solid #e8e8e8;
-}
 .template-category { margin-bottom: 14px; }
 .cat-title { margin: 0 0 6px; font-size: 12px; color: #666; font-weight: 500; }
 .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
@@ -59,4 +105,30 @@ const categories = [
 .template-card.active { border-color: #1890ff; background: #e6f7ff; color: #1890ff; }
 .template-name { font-weight: 500; }
 .template-tag { font-size: 10px; color: #999; }
+
+.theme-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.theme-label { font-size: 12px; color: #666; width: 36px; flex-shrink: 0; }
+.color-swatches { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.swatch {
+  width: 22px; height: 22px; border-radius: 4px;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px #d9d9d9;
+  cursor: pointer; padding: 0;
+}
+.swatch.active { box-shadow: 0 0 0 2px #1890ff; }
+.color-picker {
+  width: 30px; height: 24px; padding: 0; border: 1px solid #d9d9d9;
+  border-radius: 4px; cursor: pointer; background: #fff;
+}
+.font-select {
+  padding: 4px 8px; border: 1px solid #d9d9d9; border-radius: 4px;
+  font-size: 12px; color: #333; background: #fff; outline: none;
+}
+.font-select:focus { border-color: #1890ff; }
+.reset-theme {
+  padding: 4px 10px; border: 1px solid #d9d9d9; background: #fff;
+  border-radius: 4px; font-size: 12px; color: #666; cursor: pointer;
+}
+.reset-theme:hover { border-color: #ff4d4f; color: #ff4d4f; }
 </style>

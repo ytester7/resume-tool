@@ -1,51 +1,18 @@
 <script setup lang="ts">
-import { h, computed } from 'vue';
-import type { ResumeData, SectionKey } from '@/types/resume';
-import { SECTION_LABELS } from '@/types/resume';
+import { useResumeSections } from './shared/useResumeSections';
+import { getSectionLabel } from '@/types/resume';
 import ContactItems from './shared/ContactItems.vue';
-import SkillList from './shared/SkillList.vue';
-import ExperienceItem from './shared/ExperienceItem.vue';
-import ProjectItem from './shared/ProjectItem.vue';
-import EducationItem from './shared/EducationItem.vue';
-import EvaluationList from './shared/EvaluationList.vue';
+import type { ResumeData, SectionId } from '@/types/resume';
 
 const props = defineProps<{
   data: ResumeData;
-  sectionOrder: SectionKey[];
+  sectionOrder: SectionId[];
 }>();
 
-function sectionHasContent(key: SectionKey): boolean {
-  const d = props.data;
-  switch (key) {
-    case 'summary': return !!d.summary.trim();
-    case 'skills': return d.skills.length > 0;
-    case 'experience': return d.experience.length > 0;
-    case 'projects': return d.projects.length > 0;
-    case 'education': return d.education.length > 0;
-    case 'evaluation': return d.evaluation.some(e => e.text.trim());
-  }
-}
-
-function renderSection(key: SectionKey) {
-  switch (key) {
-    case 'summary':
-      return h('p', { class: 'section-summary' }, props.data.summary);
-    case 'skills':
-      return h(SkillList, { skills: props.data.skills, variant: 'compact' });
-    case 'experience':
-      return h(ExperienceItem, { items: props.data.experience });
-    case 'projects':
-      return h(ProjectItem, { items: props.data.projects });
-    case 'education':
-      return h(EducationItem, { items: props.data.education });
-    case 'evaluation':
-      return h(EvaluationList, { items: props.data.evaluation, variant: 'bullets' });
-  }
-}
-
-const visibleSections = computed(() =>
-  props.sectionOrder.filter(sectionHasContent),
-);
+const { renderSection, visibleSections } = useResumeSections(props, {
+  skillVariant: 'compact',
+  evaluationVariant: 'bullets',
+});
 </script>
 
 <template>
@@ -74,7 +41,7 @@ const visibleSections = computed(() =>
 
     <main class="resume-body">
       <section v-for="key in visibleSections" :key="key" class="resume-section">
-        <h2 class="section-title">{{ SECTION_LABELS[key] }}</h2>
+        <h2 class="section-title">{{ getSectionLabel(key, data.customSections) }}</h2>
         <component :is="renderSection(key)" />
       </section>
     </main>
@@ -83,15 +50,15 @@ const visibleSections = computed(() =>
 
 <style scoped>
 .creative-resume {
-  background: white;
-  color: #333;
-  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: var(--c-bg, white);
+  color: var(--c-text, #333);
+  font-family: var(--font-family, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif);
   font-size: 14px;
   line-height: 1.6;
   overflow: hidden;
 }
 .resume-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--c-primary, #667eea) 0%, #764ba2 100%);
   color: white;
   padding: 32px;
   position: relative;
@@ -163,7 +130,7 @@ const visibleSections = computed(() =>
   margin: 0 0 14px;
   font-size: 16px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--c-primary, #667eea);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -172,17 +139,17 @@ const visibleSections = computed(() =>
   content: '';
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, #667eea, transparent);
+  background: linear-gradient(90deg, var(--c-primary, #667eea), transparent);
   margin-left: 8px;
 }
 .section-summary {
   margin: 0;
   font-size: 13px;
-  color: #555;
+  color: var(--c-text-muted, #555);
   line-height: 1.7;
   padding: 12px 16px;
   background: linear-gradient(135deg, rgba(102,126,234,0.05), rgba(118,75,162,0.05));
   border-radius: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--c-primary, #667eea);
 }
 </style>

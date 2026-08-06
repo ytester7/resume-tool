@@ -28,12 +28,12 @@ defineProps<{ items: Project[]; }>();
 
 <style scoped>
 .project-list { display: flex; flex-direction: column; gap: 16px; }
-.project-item { padding-left: 12px; border-left: 3px solid #722ed1; }
+.project-item { padding-left: 12px; border-left: 3px solid var(--c-primary, #722ed1); }
 .project-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
 .project-name { font-weight: 600; font-size: 14px; }
-.project-time { color: #999; font-size: 12px; }
-.project-meta { font-size: 12px; color: #666; margin-bottom: 4px; }
-.project-bg, .project-subtitle { margin: 4px 0; color: #555; font-size: 13px; }
-.project-items-list { margin: 6px 0; padding-left: 18px; color: #555; font-size: 13px; line-height: 1.6; }
-.project-achievement { margin: 6px 0 0; color: #333; font-size: 13px; background: #f9f0ff; padding: 6px 10px; border-radius: 4px; }
+.project-time { color: var(--c-text-muted, #999); font-size: 12px; }
+.project-meta { font-size: 12px; color: var(--c-text-muted, #666); margin-bottom: 4px; }
+.project-bg, .project-subtitle { margin: 4px 0; color: var(--c-text-muted, #555); font-size: 13px; }
+.project-items-list { margin: 6px 0; padding-left: 18px; color: var(--c-text-muted, #555); font-size: 13px; line-height: 1.6; }
+.project-achievement { margin: 6px 0 0; color: var(--c-text, #333); font-size: 13px; background: #f9f0ff; padding: 6px 10px; border-radius: 4px; }
 </style>

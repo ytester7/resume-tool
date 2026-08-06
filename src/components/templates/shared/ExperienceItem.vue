@@ -28,12 +28,12 @@ defineProps<{
 
 <style scoped>
 .experience-list { display: flex; flex-direction: column; gap: 16px; }
-.experience-item { padding-left: 12px; border-left: 3px solid #1890ff; }
+.experience-item { padding-left: 12px; border-left: 3px solid var(--c-primary, #1890ff); }
 .experience-header { display: flex; gap: 12px; margin-bottom: 6px; font-size: 14px; }
 .experience-company { font-weight: 600; }
-.experience-role { color: #555; }
-.experience-time { color: #999; margin-left: auto; font-size: 12px; }
-.experience-desc { margin: 4px 0; color: #666; font-size: 13px; }
-.experience-items-list { margin: 6px 0; padding-left: 18px; color: #555; font-size: 13px; line-height: 1.6; }
-.experience-achievement { margin: 6px 0 0; color: #333; font-size: 13px; background: #f6ffed; padding: 6px 10px; border-radius: 4px; }
+.experience-role { color: var(--c-text-muted, #555); }
+.experience-time { color: var(--c-text-muted, #999); margin-left: auto; font-size: 12px; }
+.experience-desc { margin: 4px 0; color: var(--c-text-muted, #666); font-size: 13px; }
+.experience-items-list { margin: 6px 0; padding-left: 18px; color: var(--c-text-muted, #555); font-size: 13px; line-height: 1.6; }
+.experience-achievement { margin: 6px 0 0; color: var(--c-text, #333); font-size: 13px; background: #f6ffed; padding: 6px 10px; border-radius: 4px; }
 </style>

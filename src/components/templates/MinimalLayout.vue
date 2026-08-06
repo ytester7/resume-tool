@@ -1,51 +1,18 @@
 <script setup lang="ts">
-import { h, computed } from 'vue';
-import type { ResumeData, SectionKey } from '@/types/resume';
-import { SECTION_LABELS } from '@/types/resume';
+import { useResumeSections } from './shared/useResumeSections';
+import { getSectionLabel } from '@/types/resume';
 import ContactItems from './shared/ContactItems.vue';
-import SkillList from './shared/SkillList.vue';
-import ExperienceItem from './shared/ExperienceItem.vue';
-import ProjectItem from './shared/ProjectItem.vue';
-import EducationItem from './shared/EducationItem.vue';
-import EvaluationList from './shared/EvaluationList.vue';
+import type { ResumeData, SectionId } from '@/types/resume';
 
 const props = defineProps<{
   data: ResumeData;
-  sectionOrder: SectionKey[];
+  sectionOrder: SectionId[];
 }>();
 
-function sectionHasContent(key: SectionKey): boolean {
-  const d = props.data;
-  switch (key) {
-    case 'summary': return !!d.summary.trim();
-    case 'skills': return d.skills.length > 0;
-    case 'experience': return d.experience.length > 0;
-    case 'projects': return d.projects.length > 0;
-    case 'education': return d.education.length > 0;
-    case 'evaluation': return d.evaluation.some(e => e.text.trim());
-  }
-}
-
-function renderSection(key: SectionKey) {
-  switch (key) {
-    case 'summary':
-      return h('p', { class: 'section-summary' }, props.data.summary);
-    case 'skills':
-      return h(SkillList, { skills: props.data.skills, variant: 'list' });
-    case 'experience':
-      return h(ExperienceItem, { items: props.data.experience });
-    case 'projects':
-      return h(ProjectItem, { items: props.data.projects });
-    case 'education':
-      return h(EducationItem, { items: props.data.education });
-    case 'evaluation':
-      return h(EvaluationList, { items: props.data.evaluation, variant: 'paragraphs' });
-  }
-}
-
-const visibleSections = computed(() =>
-  props.sectionOrder.filter(sectionHasContent),
-);
+const { renderSection, visibleSections } = useResumeSections(props, {
+  skillVariant: 'list',
+  evaluationVariant: 'paragraphs',
+});
 </script>
 
 <template>
@@ -67,7 +34,7 @@ const visibleSections = computed(() =>
 
     <main class="resume-body">
       <section v-for="key in visibleSections" :key="key" class="resume-section">
-        <h2 class="section-title">{{ SECTION_LABELS[key] }}</h2>
+        <h2 class="section-title">{{ getSectionLabel(key, data.customSections) }}</h2>
         <component :is="renderSection(key)" />
       </section>
     </main>
@@ -76,10 +43,10 @@ const visibleSections = computed(() =>
 
 <style scoped>
 .minimal-resume {
-  background: #fff;
+  background: var(--c-bg, #fff);
   padding: 40px;
-  color: #333;
-  font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  color: var(--c-text, #333);
+  font-family: var(--font-family, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -87,14 +54,14 @@ const visibleSections = computed(() =>
   text-align: center;
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--c-border, #e5e5e5);
 }
 .resume-name {
   margin: 0 0 8px;
   font-size: 32px;
   font-weight: 400;
   letter-spacing: 8px;
-  color: #111;
+  color: var(--c-text, #111);
 }
 .resume-title {
   margin: 0 0 16px;
@@ -102,7 +69,7 @@ const visibleSections = computed(() =>
   font-weight: 400;
   letter-spacing: 4px;
   text-transform: uppercase;
-  color: #666;
+  color: var(--c-text-muted, #666);
 }
 .resume-intent {
   display: flex;
@@ -115,23 +82,23 @@ const visibleSections = computed(() =>
   padding: 3px 12px;
   background: #f5f5f5;
   border-radius: 3px;
-  color: #666;
+  color: var(--c-text-muted, #666);
 }
 .resume-section { margin-bottom: 24px; }
 .section-title {
   margin: 0 0 14px;
   font-size: 12px;
   font-weight: 600;
-  color: #999;
+  color: var(--c-text-muted, #999);
   text-transform: uppercase;
   letter-spacing: 3px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--c-border, #eee);
 }
 .section-summary {
   margin: 0;
   font-size: 13px;
-  color: #555;
+  color: var(--c-text-muted, #555);
   line-height: 1.8;
   text-align: justify;
 }

@@ -8,6 +8,7 @@ const baseValid: ResumeData = {
   github: '', website: '', summary: '',
   skills: [], experience: [], projects: [], education: [],
   evaluation: [{ text: 'x' }],
+  customSections: [],
 };
 
 describe('parseResumeFile', () => {
@@ -71,6 +72,68 @@ describe('parseResumeFile', () => {
     expect(result.data.skills).toEqual([]);
     expect(result.data.evaluation).toEqual([{ text: '' }, { text: '' }, { text: '' }]);
   });
+
+  it('customSections 正常解析', () => {
+    const raw = {
+      ...baseValid,
+      customSections: [
+        { id: 'c1', title: '证书资质', content: 'PMP\n软考高级' },
+      ],
+    };
+    const result = parseResumeFile(raw);
+    expect(result.data.customSections).toEqual([
+      { id: 'c1', title: '证书资质', content: 'PMP\n软考高级' },
+    ]);
+  });
+
+  it('customSections 过滤非法项并宽容处理字段', () => {
+    const raw = {
+      ...baseValid,
+      customSections: [
+        'invalid',
+        { id: 123, title: 42, content: null },
+        { title: '无 id', content: 'ok' },
+      ],
+    };
+    const result = parseResumeFile(raw);
+    expect(result.data.customSections.length).toBe(2);
+    expect(typeof result.data.customSections[0].id).toBe('string');
+    expect(result.data.customSections[0].title).toBe('42');
+    expect(result.data.customSections[0].content).toBe('');
+    expect(result.data.customSections[1].id).not.toBe('');
+  });
+
+  it('customSections 非数组时为空数组', () => {
+    const raw = { ...baseValid, customSections: 'invalid' };
+    const result = parseResumeFile(raw);
+    expect(result.data.customSections).toEqual([]);
+  });
+
+  it('theme 随 _meta 解析', () => {
+    const raw = {
+      ...baseValid,
+      _meta: {
+        template: 'classic', sectionOrder: null, savedAt: '', version: '2.0',
+        theme: { primaryColor: '#ff0000', fontFamily: 'serif' },
+      },
+    };
+    const result = parseResumeFile(raw);
+    expect(result.theme).toEqual({ primaryColor: '#ff0000', fontFamily: 'serif' });
+  });
+
+  it('_meta 无 theme 时返回 null', () => {
+    const result = parseResumeFile({ ...baseValid });
+    expect(result.theme).toBe(null);
+  });
+
+  it('theme 非法类型时返回 null', () => {
+    const raw = {
+      ...baseValid,
+      _meta: { template: 'classic', sectionOrder: null, savedAt: '', version: '2.0', theme: 'bad' },
+    };
+    const result = parseResumeFile(raw);
+    expect(result.theme).toBe(null);
+  });
 });
 
 describe('serializeResume', () => {
@@ -96,5 +159,30 @@ describe('serializeResume', () => {
     expect(result.data.name).toBe('张三');
     expect(result.template).toBe('qa-pro');
     expect(result.sectionOrder).toEqual(['education', 'skills']);
+  });
+
+  it('customSections 随序列化往返不丢', () => {
+    const data: ResumeData = {
+      ...baseValid,
+      customSections: [{ id: 'c1', title: '证书', content: 'PMP' }],
+    };
+    const json = serializeResume(data, 'classic', ['summary', 'custom:c1']);
+    const result = parseResumeFile(JSON.parse(json));
+    expect(result.data.customSections).toEqual([{ id: 'c1', title: '证书', content: 'PMP' }]);
+    expect(result.sectionOrder).toEqual(['summary', 'custom:c1']);
+  });
+
+  it('theme 随 serializeResume 往返', () => {
+    const json = serializeResume(baseValid, 'classic', null, { primaryColor: '#123456', fontFamily: 'serif' });
+    const parsed = JSON.parse(json);
+    expect(parsed._meta.theme).toEqual({ primaryColor: '#123456', fontFamily: 'serif' });
+    const result = parseResumeFile(parsed);
+    expect(result.theme).toEqual({ primaryColor: '#123456', fontFamily: 'serif' });
+  });
+
+  it('serializeResume 未传 theme 时 _meta 不含 theme', () => {
+    const json = serializeResume(baseValid, 'classic', null);
+    const parsed = JSON.parse(json);
+    expect(parsed._meta.theme).toBeUndefined();
   });
 });

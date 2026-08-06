@@ -14,13 +14,13 @@ export function useAutoSave() {
   const debouncedFileSave = useDebounceFn(async () => {
     const tab = tabs.active;
     if (!tab?.fileHandle || !tab.dirty) return;
-    const content = serializeResume(tab.data, tab.template, tab.sectionOrder);
+    const content = serializeResume(tab.data, tab.template, tab.sectionOrder, tab.theme);
     const ok = await fs.writeToFile(tab.fileHandle, content);
     if (ok) tab.dirty = false;
   }, FILE_SAVE_DEBOUNCE_MS);
 
   const stopWatch = watch(
-    () => tabs.active ? [tabs.active.data, tabs.active.template, tabs.active.sectionOrder] : null,
+    () => tabs.active ? [tabs.active.data, tabs.active.template, tabs.active.sectionOrder, tabs.active.theme] : null,
     () => {
       if (!tabs.active) return;
       tabs.active.dirty = true;
@@ -41,6 +41,7 @@ export function useAutoSave() {
           sectionOrder: tab.sectionOrder,
           title: tab.title,
           savedAt: new Date().toISOString(),
+          theme: tab.theme,
         }));
       } catch {
         // quota exceeded 静默失败
@@ -58,6 +59,7 @@ export function useAutoSave() {
           sectionOrder: tab.sectionOrder,
           title: tab.title,
           savedAt: new Date().toISOString(),
+          theme: tab.theme,
         }));
       } catch {
         // 静默
@@ -81,6 +83,7 @@ export interface OrphanedTabData {
     sectionOrder: any;
     title: string;
     savedAt: string;
+    theme?: any;
   };
 }
 

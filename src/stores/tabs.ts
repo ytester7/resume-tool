@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { ResumeSession, ResumeData, TemplateName, SectionKey, Skill, Experience, Project, Education } from '@/types/resume';
-import { defaultResumeData, generateId } from '@/types/resume';
+import type {
+  ResumeSession, ResumeData, TemplateName, SectionId,
+  CustomSection, ThemeConfig, Skill, Experience, Project, Education,
+} from '@/types/resume';
+import { TEMPLATE_REGISTRY, defaultResumeData, generateId } from '@/types/resume';
 
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<ResumeSession[]>([]);
@@ -20,6 +23,7 @@ export const useTabsStore = defineStore('tabs', () => {
       sectionOrder: opts.sectionOrder ?? null,
       fileHandle: opts.fileHandle ?? null,
       dirty: opts.dirty ?? false,
+      theme: opts.theme ?? null,
     };
     tabs.value.push(session);
     activeId.value = session.id;
@@ -56,11 +60,44 @@ export const useTabsStore = defineStore('tabs', () => {
     }
   }
 
-  function setSectionOrder(order: SectionKey[] | null): void {
+  function setSectionOrder(order: SectionId[] | null): void {
     if (active.value) {
       active.value.sectionOrder = order;
       active.value.dirty = true;
     }
+  }
+
+  function setTheme(theme: ThemeConfig | null): void {
+    if (active.value) {
+      active.value.theme = theme;
+      active.value.dirty = true;
+    }
+  }
+
+  function addCustomSection(): void {
+    if (!active.value) return;
+    const id = generateId();
+    const sec: CustomSection = { id, title: '', content: '' };
+    active.value.data.customSections.push(sec);
+    const meta = TEMPLATE_REGISTRY[active.value.template];
+    if (meta.sectionOrderMutable) {
+      const order = active.value.sectionOrder ?? meta.defaultSectionOrder;
+      active.value.sectionOrder = [...order, `custom:${id}`];
+    }
+    active.value.dirty = true;
+  }
+
+  function removeCustomSection(index: number): void {
+    if (!active.value) return;
+    const sec = active.value.data.customSections[index];
+    if (!sec) return;
+    active.value.data.customSections.splice(index, 1);
+    if (active.value.sectionOrder) {
+      active.value.sectionOrder = active.value.sectionOrder.filter(
+        (k) => k !== `custom:${sec.id}`,
+      );
+    }
+    active.value.dirty = true;
   }
 
   function rename(id: string, title: string): void {
@@ -141,9 +178,10 @@ export const useTabsStore = defineStore('tabs', () => {
   return {
     tabs, activeId, active,
     open, switchTo, close,
-    patchActive, setTemplate, setSectionOrder, rename, markClean, markDirty,
+    patchActive, setTemplate, setSectionOrder, setTheme, rename, markClean, markDirty,
     addSkill, removeSkill, addExperience, removeExperience,
     addProject, removeProject, addEducation, removeEducation,
+    addCustomSection, removeCustomSection,
     findExistingByTitle,
   };
 });

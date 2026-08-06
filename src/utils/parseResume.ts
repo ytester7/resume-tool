@@ -1,11 +1,14 @@
-import type { ResumeData, ResumeFile, TemplateName, SectionKey } from '@/types/resume';
-import { TEMPLATE_REGISTRY } from '@/types/resume';
+import type {
+  ResumeData, ResumeFile, TemplateName, SectionId, ThemeConfig, CustomSection,
+} from '@/types/resume';
+import { TEMPLATE_REGISTRY, generateId } from '@/types/resume';
 import { ResumeParseError } from './errors';
 
 export interface ParsedResume {
   data: ResumeData;
   template: TemplateName;
-  sectionOrder: SectionKey[] | null;
+  sectionOrder: SectionId[] | null;
+  theme: ThemeConfig | null;
 }
 
 export function parseResumeFile(raw: unknown): ParsedResume {
@@ -27,9 +30,27 @@ export function parseResumeFile(raw: unknown): ParsedResume {
   const template: TemplateName = TEMPLATE_REGISTRY[meta.template as TemplateName]
     ? meta.template
     : 'classic';
-  const sectionOrder: SectionKey[] | null = Array.isArray(meta.sectionOrder)
-    ? meta.sectionOrder as SectionKey[]
+  const sectionOrder: SectionId[] | null = Array.isArray(meta.sectionOrder)
+    ? meta.sectionOrder as SectionId[]
     : null;
+
+  const theme: ThemeConfig | null =
+    meta.theme && typeof meta.theme === 'object'
+      ? {
+          primaryColor: String(meta.theme.primaryColor ?? ''),
+          fontFamily: String(meta.theme.fontFamily ?? ''),
+        }
+      : null;
+
+  const customSections: CustomSection[] = Array.isArray(obj.customSections)
+    ? obj.customSections
+        .filter((c: unknown): c is Record<string, unknown> => c !== null && typeof c === 'object')
+        .map((c) => ({
+          id: typeof c.id === 'string' ? c.id : generateId(),
+          title: String(c.title ?? ''),
+          content: String(c.content ?? ''),
+        }))
+    : [];
 
   const data: ResumeData = {
     name: String(obj.name ?? ''),
@@ -48,15 +69,17 @@ export function parseResumeFile(raw: unknown): ParsedResume {
     projects: Array.isArray(obj.projects) ? obj.projects : [],
     education: Array.isArray(obj.education) ? obj.education : [],
     evaluation,
+    customSections,
   };
 
-  return { data, template, sectionOrder };
+  return { data, template, sectionOrder, theme };
 }
 
 export function serializeResume(
   data: ResumeData,
   template: TemplateName,
-  sectionOrder: SectionKey[] | null,
+  sectionOrder: SectionId[] | null,
+  theme?: ThemeConfig | null,
 ): string {
   const file: ResumeFile = {
     ...data,
@@ -65,6 +88,7 @@ export function serializeResume(
       sectionOrder,
       savedAt: new Date().toISOString(),
       version: '2.0',
+      ...(theme ? { theme } : {}),
     },
   };
   return JSON.stringify(file, null, 2);

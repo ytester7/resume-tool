@@ -83,18 +83,18 @@ defineProps<{
 
 <style scoped>
 .tech-gradient-template {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
   display: flex;
   min-height: 297mm;
-  color: #334155;
+  color: var(--c-text, #334155);
   line-height: 1.6;
-  background: #fff;
+  background: var(--c-bg, #fff);
 }
 
 .gradient-bar {
   width: 110px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #1e3a5f 0%, #0891b2 50%, #06b6d4 100%);
+  background: linear-gradient(180deg, #1e3a5f 0%, var(--c-primary, #0891b2) 50%, #06b6d4 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -138,13 +138,13 @@ defineProps<{
 .resume-header {
   margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--c-border, #e2e8f0);
 }
 .resume-header h1 {
   margin: 0 0 4px;
   font-size: 26px;
   font-weight: 700;
-  background: linear-gradient(135deg, #1e3a5f, #0891b2);
+  background: linear-gradient(135deg, #1e3a5f, var(--c-primary, #0891b2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -152,16 +152,16 @@ defineProps<{
 }
 .resume-header .title {
   font-size: 14px;
-  color: #64748b;
+  color: var(--c-text-muted, #64748b);
   font-weight: 400;
 }
 
 .header-contact {
   margin-top: 10px;
   font-size: 12px;
-  color: #475569;
+  color: var(--c-text-muted, #475569);
 }
-.header-contact :deep(.contact-item) { color: #475569; }
+.header-contact :deep(.contact-item) { color: var(--c-text-muted, #475569); }
 
 .header-intention {
   margin-top: 8px;
@@ -173,7 +173,7 @@ defineProps<{
   font-size: 11px;
   padding: 3px 10px;
   background: linear-gradient(135deg, rgba(30, 58, 95, 0.08), rgba(8, 145, 178, 0.08));
-  color: #0891b2;
+  color: var(--c-primary, #0891b2);
   border-radius: 12px;
   border: 1px solid rgba(8, 145, 178, 0.2);
 }
@@ -185,23 +185,23 @@ defineProps<{
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 700;
-  color: #1e3a5f;
+  color: var(--c-text, #1e3a5f);
   padding: 0 0 6px 12px;
-  border-left: 3px solid #0891b2;
+  border-left: 3px solid var(--c-primary, #0891b2);
 }
 
 .summary-text {
   margin: 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--c-text-muted, #475569);
   line-height: 1.8;
   text-align: justify;
 }
 
 /* Override shared skill bars to use gradient fill */
 .section :deep(.skill-bar-fill) {
-  background: linear-gradient(90deg, #1e3a5f, #0891b2);
+  background: linear-gradient(90deg, #1e3a5f, var(--c-primary, #0891b2));
 }
-.section :deep(.skill-category) { color: #1e3a5f; }
-.section :deep(.skill-level) { color: #0891b2; }
+.section :deep(.skill-category) { color: var(--c-text, #1e3a5f); }
+.section :deep(.skill-level) { color: var(--c-primary, #0891b2); }
 </style>

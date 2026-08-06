@@ -24,7 +24,7 @@ const nonEmpty = computed(() => props.items.filter(i => i.text.trim()));
 </template>
 
 <style scoped>
-.evaluation-list { font-size: 13px; line-height: 1.6; color: #555; }
+.evaluation-list { font-size: 13px; line-height: 1.6; color: var(--c-text-muted, #555); }
 .eval-paragraph { margin: 0 0 8px; }
 .eval-paragraph:last-child { margin-bottom: 0; }
 .eval-bullets { margin: 0; padding-left: 18px; }

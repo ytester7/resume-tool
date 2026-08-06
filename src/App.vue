@@ -9,6 +9,7 @@ import { useStartupRecovery } from '@/composables/useStartupRecovery';
 import { usePdfExport } from '@/composables/usePdfExport';
 import { parseResumeFile, serializeResume } from '@/utils/parseResume';
 import { sanitizeFilename } from '@/utils/sanitize';
+import { toErrorMessage } from '@/utils/errors';
 import Toolbar from '@/components/Toolbar.vue';
 import TabBar from '@/components/TabBar.vue';
 import EditorPanel from '@/components/EditorPanel.vue';
@@ -43,8 +44,8 @@ async function onOpen() {
       dirty: false,
     });
     ui.toastSuccess(`已加载 ${result.fileName}`);
-  } catch (e: any) {
-    ui.toastError('打开失败: ' + e.message);
+  } catch (e: unknown) {
+    ui.toastError('打开失败: ' + toErrorMessage(e));
   }
 }
 
@@ -58,7 +59,7 @@ async function onSave() {
     if (!handle) return;
     tab.fileHandle = handle;
   }
-  const content = serializeResume(tab.data, tab.template, tab.sectionOrder);
+  const content = serializeResume(tab.data, tab.template, tab.sectionOrder, tab.theme);
   const ok = await fs.writeToFile(handle, content);
   if (ok) {
     tab.dirty = false;
@@ -74,7 +75,7 @@ async function onSaveAs() {
   const name = sanitizeFilename(tab.data.name || tab.title) + '-简历.json';
   const handle = await fs.pickSaveFile(name);
   if (!handle) return;
-  const content = serializeResume(tab.data, tab.template, tab.sectionOrder);
+  const content = serializeResume(tab.data, tab.template, tab.sectionOrder, tab.theme);
   const ok = await fs.writeToFile(handle, content);
   if (ok) {
     tab.fileHandle = handle;
@@ -114,13 +115,13 @@ onMounted(async () => {
     />
     <TabBar />
     <main class="app-main">
-      <aside class="app-editor">
+      <aside class="app-editor" aria-label="简历编辑区">
         <EditorPanel v-if="tabs.active" />
         <div v-else class="empty-editor">
           <p>请点击"新建"创建简历，或"打开"加载已有文件</p>
         </div>
       </aside>
-      <section class="app-preview">
+      <section class="app-preview" aria-label="简历预览区">
         <PreviewPanel />
       </section>
     </main>
@@ -146,5 +147,22 @@ onMounted(async () => {
 .empty-editor {
   display: flex; align-items: center; justify-content: center;
   height: 100%; color: #999; padding: 40px; text-align: center;
+}
+
+/* 平板（768-1023px）：收窄编辑栏，避免 380px 在 768px 屏上挤压预览 */
+@media (max-width: 1023px) {
+  .app-main { grid-template-columns: 320px 1fr; }
+}
+
+/* 手机 / 窄窗（<768px）：垂直堆叠，编辑栏与预览各占一半高度，独立滚动 */
+@media (max-width: 767px) {
+  .app-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 45% 55%;
+  }
+  .app-editor {
+    border-right: none;
+    border-bottom: 1px solid #e8e8e8;
+  }
 }
 </style>

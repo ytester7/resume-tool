@@ -1,2 +1,85 @@
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* ===== 编辑器公共样式 =====
+ * 这些类在多个 section 组件中重复出现，统一抽取到全局，
+ * 避免每个 scoped 块重复声明同一份规则。
+ * Vue scoped CSS 通过 [data-v-xxx] 提升优先级，
+ * 因此 scoped 块中保留的差异化尺寸覆盖仍能生效。
+ */
+.editor-section {
+  margin-bottom: 24px;
+}
+
+.section-heading {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1890ff;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+/* 拖拽手柄：editor sections 与 EditorPanel 的区块顺序面板共用 */
+.drag-handle {
+  cursor: grab;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+}
+.drag-handle:active { cursor: grabbing; }
+
+/* DraggableList 的 ghost class（拖拽时的占位样式） */
+.dragging {
+  opacity: 0.5;
+  background: #e6f7ff;
+}
+
+/* 危险删除按钮：默认尺寸为 Skills/Education 使用的大尺寸。
+ * Experience/Projects 内嵌子项需要更小尺寸，由各自 scoped 块覆盖。
+ */
+.remove-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #ff4d4f;
+  padding: 4px;
+  font-size: 14px;
+}
+
+/* 添加按钮（顶级）：默认尺寸为 Skills/Education/Template 使用的大尺寸 */
+.add-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px dashed #1890ff;
+  background: #fff;
+  color: #1890ff;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.add-btn:hover { background: #f0f5ff; }
+
+/* 添加按钮（内嵌项）：Experience/Projects 卡片内的"添加工作内容/项目内容"，
+ * 视觉上比顶级 add-btn 更紧凑。
+ */
+.add-item-btn {
+  margin-top: 4px;
+  padding: 4px 10px;
+  border: 1px dashed #1890ff;
+  background: #fff;
+  color: #1890ff;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.add-item-btn:hover { background: #f0f5ff; }

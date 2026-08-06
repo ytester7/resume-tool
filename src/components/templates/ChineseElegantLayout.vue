@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { h, computed } from 'vue';
-import type { ResumeData, SectionKey } from '@/types/resume';
-import { SECTION_LABELS } from '@/types/resume';
+import { useResumeSections } from './shared/useResumeSections';
+import { getSectionLabel } from '@/types/resume';
 import ContactItems from './shared/ContactItems.vue';
-import SkillList from './shared/SkillList.vue';
-import ExperienceItem from './shared/ExperienceItem.vue';
-import ProjectItem from './shared/ProjectItem.vue';
-import EducationItem from './shared/EducationItem.vue';
-import EvaluationList from './shared/EvaluationList.vue';
+import type { ResumeData, SectionId, SectionKey } from '@/types/resume';
 
 const props = defineProps<{
   data: ResumeData;
-  sectionOrder: SectionKey[];
+  sectionOrder: SectionId[];
 }>();
 
 const SEALS: Record<SectionKey, string> = {
@@ -23,38 +18,10 @@ const SEALS: Record<SectionKey, string> = {
   evaluation: '',
 };
 
-function sectionHasContent(key: SectionKey): boolean {
-  const d = props.data;
-  switch (key) {
-    case 'summary': return !!d.summary.trim();
-    case 'skills': return d.skills.length > 0;
-    case 'experience': return d.experience.length > 0;
-    case 'projects': return d.projects.length > 0;
-    case 'education': return d.education.length > 0;
-    case 'evaluation': return d.evaluation.some(e => e.text.trim());
-  }
-}
-
-function renderSection(key: SectionKey) {
-  switch (key) {
-    case 'summary':
-      return h('p', { class: 'section-summary' }, props.data.summary);
-    case 'skills':
-      return h(SkillList, { skills: props.data.skills, variant: 'list' });
-    case 'experience':
-      return h(ExperienceItem, { items: props.data.experience });
-    case 'projects':
-      return h(ProjectItem, { items: props.data.projects });
-    case 'education':
-      return h(EducationItem, { items: props.data.education });
-    case 'evaluation':
-      return h(EvaluationList, { items: props.data.evaluation, variant: 'bullets' });
-  }
-}
-
-const visibleSections = computed(() =>
-  props.sectionOrder.filter(sectionHasContent),
-);
+const { renderSection, visibleSections } = useResumeSections(props, {
+  skillVariant: 'list',
+  evaluationVariant: 'bullets',
+});
 </script>
 
 <template>
@@ -82,8 +49,8 @@ const visibleSections = computed(() =>
     <main class="resume-body">
       <section v-for="key in visibleSections" :key="key" class="resume-section">
         <h2 class="section-title">
-          <span v-if="SEALS[key]" class="seal">{{ SEALS[key] }}</span>
-          {{ SECTION_LABELS[key] }}
+          <span v-if="SEALS[key as SectionKey]" class="seal">{{ SEALS[key as SectionKey] }}</span>
+          {{ getSectionLabel(key, data.customSections) }}
         </h2>
         <component :is="renderSection(key)" />
       </section>
@@ -94,17 +61,17 @@ const visibleSections = computed(() =>
 <style scoped>
 .chinese-elegant-template {
   padding: 0;
-  color: #2c3e50;
-  background: #faf6f0;
-  font-family: "KaiTi", "楷体", "Noto Serif SC", "SimSun", "宋体", Georgia, serif;
+  color: var(--c-text, #2c3e50);
+  background: var(--c-bg, #faf6f0);
+  font-family: var(--font-family, "KaiTi", "楷体", "Noto Serif SC", "SimSun", "宋体", Georgia, serif);
   font-size: 14px;
   line-height: 1.8;
 }
 .resume-header {
   position: relative;
   padding: 24px 32px 18px;
-  background: #faf6f0;
-  border-bottom: 2px solid #c0392b;
+  background: var(--c-bg, #faf6f0);
+  border-bottom: 2px solid var(--c-primary, #c0392b);
 }
 .header-main {
   display: flex;
@@ -115,21 +82,21 @@ const visibleSections = computed(() =>
   margin: 0 0 4px;
   font-size: 30px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--c-text, #2c3e50);
   letter-spacing: 6px;
-  font-family: "KaiTi", "楷体", serif;
+  font-family: var(--font-family, "KaiTi", "楷体", serif);
 }
 .header-left .title {
   font-size: 14px;
   font-weight: 400;
-  color: #7f8c8d;
+  color: var(--c-text-muted, #7f8c8d);
   letter-spacing: 2px;
 }
 .header-right {
   text-align: right;
   font-size: 12px;
   line-height: 2;
-  color: #555;
+  color: var(--c-text-muted, #555);
 }
 .header-right :deep(.contact-items.stacked) {
   align-items: flex-end;
@@ -141,8 +108,8 @@ const visibleSections = computed(() =>
   margin-top: 10px;
   padding-top: 8px;
   font-size: 12px;
-  color: #7f8c8d;
-  border-top: 1px dashed #d4c5a9;
+  color: var(--c-text-muted, #7f8c8d);
+  border-top: 1px dashed var(--c-border, #d4c5a9);
 }
 .resume-body {
   padding: 18px 32px 24px;
@@ -159,7 +126,7 @@ const visibleSections = computed(() =>
   padding-bottom: 6px;
   font-size: 15px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--c-text, #2c3e50);
   letter-spacing: 3px;
 }
 .section-title::after {
@@ -167,7 +134,7 @@ const visibleSections = computed(() =>
   flex: 1;
   height: 1px;
   margin-left: 8px;
-  background: #d4c5a9;
+  background: var(--c-border, #d4c5a9);
 }
 .seal {
   display: inline-flex;
@@ -178,8 +145,8 @@ const visibleSections = computed(() =>
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 700;
-  color: #c0392b;
-  border: 1.5px solid #c0392b;
+  color: var(--c-primary, #c0392b);
+  border: 1.5px solid var(--c-primary, #c0392b);
   border-radius: 2px;
   letter-spacing: 0;
   transform: rotate(-5deg);
@@ -187,7 +154,7 @@ const visibleSections = computed(() =>
 .section-summary {
   margin: 0;
   font-size: 13px;
-  color: #4a4a4a;
+  color: var(--c-text, #4a4a4a);
   line-height: 2;
   text-align: justify;
   text-indent: 2em;

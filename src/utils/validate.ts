@@ -12,7 +12,7 @@ const STRING_FIELDS: (keyof ResumeData)[] = [
 ];
 
 const ARRAY_FIELDS: (keyof ResumeData)[] = [
-  'skills', 'experience', 'projects', 'education',
+  'skills', 'experience', 'projects', 'education', 'customSections',
 ];
 
 export function validateResume(data: unknown): ValidationResult {

@@ -1,51 +1,18 @@
 <script setup lang="ts">
-import { h, computed } from 'vue';
-import type { ResumeData, SectionKey } from '@/types/resume';
-import { SECTION_LABELS } from '@/types/resume';
+import { useResumeSections } from './shared/useResumeSections';
+import { getSectionLabel } from '@/types/resume';
 import ContactItems from './shared/ContactItems.vue';
-import SkillList from './shared/SkillList.vue';
-import ExperienceItem from './shared/ExperienceItem.vue';
-import ProjectItem from './shared/ProjectItem.vue';
-import EducationItem from './shared/EducationItem.vue';
-import EvaluationList from './shared/EvaluationList.vue';
+import type { ResumeData, SectionId } from '@/types/resume';
 
 const props = defineProps<{
   data: ResumeData;
-  sectionOrder: SectionKey[];
+  sectionOrder: SectionId[];
 }>();
 
-function sectionHasContent(key: SectionKey): boolean {
-  const d = props.data;
-  switch (key) {
-    case 'summary': return !!d.summary.trim();
-    case 'skills': return d.skills.length > 0;
-    case 'experience': return d.experience.length > 0;
-    case 'projects': return d.projects.length > 0;
-    case 'education': return d.education.length > 0;
-    case 'evaluation': return d.evaluation.some(e => e.text.trim());
-  }
-}
-
-function renderSection(key: SectionKey) {
-  switch (key) {
-    case 'summary':
-      return h('p', { class: 'section-summary' }, props.data.summary);
-    case 'skills':
-      return h(SkillList, { skills: props.data.skills, variant: 'compact' });
-    case 'experience':
-      return h(ExperienceItem, { items: props.data.experience });
-    case 'projects':
-      return h(ProjectItem, { items: props.data.projects });
-    case 'education':
-      return h(EducationItem, { items: props.data.education });
-    case 'evaluation':
-      return h(EvaluationList, { items: props.data.evaluation, variant: 'bullets' });
-  }
-}
-
-const visibleSections = computed(() =>
-  props.sectionOrder.filter(sectionHasContent),
-);
+const { renderSection, visibleSections } = useResumeSections(props, {
+  skillVariant: 'compact',
+  evaluationVariant: 'bullets',
+});
 </script>
 
 <template>
@@ -68,7 +35,7 @@ const visibleSections = computed(() =>
         :key="key"
         :class="['resume-section', `section-${key}`]"
       >
-        <h2 class="section-title">{{ SECTION_LABELS[key] }}</h2>
+        <h2 class="section-title">{{ getSectionLabel(key, data.customSections) }}</h2>
         <component :is="renderSection(key)" />
       </section>
     </main>
@@ -78,9 +45,9 @@ const visibleSections = computed(() =>
 <style scoped>
 .card-style-template {
   padding: 20px 24px;
-  color: #334155;
-  background: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--c-text, #334155);
+  background: var(--c-bg, #f8fafc);
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -96,14 +63,14 @@ const visibleSections = computed(() =>
   margin: 0 0 4px;
   font-size: 26px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--c-text, #1e293b);
   letter-spacing: 3px;
 }
 .title {
   margin-bottom: 12px;
   font-size: 14px;
   font-weight: 500;
-  color: #6366f1;
+  color: var(--c-primary, #6366f1);
 }
 .contact-bar {
   display: flex;
@@ -123,7 +90,7 @@ const visibleSections = computed(() =>
   padding: 4px 12px;
   font-size: 11px;
   font-weight: 500;
-  color: #6366f1;
+  color: var(--c-primary, #6366f1);
   background: #eef2ff;
   border-radius: 20px;
 }
@@ -133,7 +100,7 @@ const visibleSections = computed(() =>
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid var(--c-primary, #6366f1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .resume-section:hover {
@@ -149,12 +116,12 @@ const visibleSections = computed(() =>
   margin: 0 0 10px;
   font-size: 14px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--c-text, #1e293b);
 }
 .section-summary {
   margin: 0;
   font-size: 13px;
-  color: #475569;
+  color: var(--c-text-muted, #475569);
   line-height: 1.8;
   text-align: justify;
 }

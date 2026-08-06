@@ -15,8 +15,8 @@ function onBackdrop() {
 <template>
   <Transition name="dialog-fade">
     <div v-if="ui.confirmState.visible" class="confirm-backdrop" @click.self="onBackdrop">
-      <div class="confirm-dialog" role="dialog" aria-modal="true">
-        <h3 class="confirm-title">{{ ui.confirmState.options.title }}</h3>
+      <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+        <h3 id="confirm-dialog-title" class="confirm-title">{{ ui.confirmState.options.title }}</h3>
         <p class="confirm-message">{{ ui.confirmState.options.message }}</p>
         <div class="confirm-actions">
           <button
@@ -57,4 +57,15 @@ function onBackdrop() {
 .confirm-btn.secondary:hover { background: #f5f5f5; }
 .dialog-fade-enter-active, .dialog-fade-leave-active { transition: opacity 0.2s; }
 .dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }
+
+/* 窄屏：对话框宽度自适应，避免超出视口 */
+@media (max-width: 767px) {
+  .confirm-dialog {
+    min-width: auto;
+    width: calc(100vw - 32px);
+    padding: 16px;
+  }
+  .confirm-actions { flex-wrap: wrap; }
+  .confirm-btn { flex: 1; }
+}
 </style>

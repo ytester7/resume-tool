@@ -82,18 +82,18 @@ defineProps<{
 
 <style scoped>
 .european-template {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
   display: flex;
   flex-direction: column;
   min-height: 297mm;
-  color: #374151;
+  color: var(--c-text, #374151);
   line-height: 1.6;
-  background: #fff;
+  background: var(--c-bg, #fff);
 }
 
 .resume-header {
   padding: 20px 24px 16px;
-  border-bottom: 2px solid #374151;
+  border-bottom: 2px solid var(--c-primary, #374151);
 }
 
 .header-main {
@@ -105,19 +105,19 @@ defineProps<{
   margin: 0 0 2px;
   font-size: 24px;
   font-weight: 700;
-  color: #111827;
+  color: var(--c-text, #111827);
   letter-spacing: 2px;
 }
 .header-left .title {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--c-text-muted, #6b7280);
   font-weight: 400;
 }
 .header-right {
   text-align: right;
   font-size: 12px;
   line-height: 1.8;
-  color: #4b5563;
+  color: var(--c-text-muted, #4b5563);
 }
 .header-right :deep(.contact-items) {
   align-items: flex-end;
@@ -126,9 +126,9 @@ defineProps<{
 .header-intention {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--c-border, #e5e7eb);
   font-size: 12px;
-  color: #6b7280;
+  color: var(--c-text-muted, #6b7280);
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -143,7 +143,7 @@ defineProps<{
   width: 50%;
   padding: 24px 20px 24px 24px;
   box-sizing: border-box;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--c-border, #e5e7eb);
 }
 
 .col-right {
@@ -159,17 +159,17 @@ defineProps<{
   margin: 0 0 10px;
   font-size: 12px;
   font-weight: 700;
-  color: #374151;
+  color: var(--c-primary, #374151);
   text-transform: uppercase;
   letter-spacing: 3px;
   padding-bottom: 4px;
-  border-bottom: 1px solid #d1d5db;
+  border-bottom: 1px solid var(--c-border, #d1d5db);
 }
 
 .summary-text {
   margin: 0;
   font-size: 12px;
-  color: #4b5563;
+  color: var(--c-text-muted, #4b5563);
   line-height: 1.7;
   text-align: justify;
 }

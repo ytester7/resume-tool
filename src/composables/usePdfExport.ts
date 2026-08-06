@@ -1,6 +1,7 @@
 import { useTabsStore } from '@/stores/tabs';
 import { useUiStore } from '@/stores/ui';
 import { sanitizeFilename } from '@/utils/sanitize';
+import { toErrorMessage } from '@/utils/errors';
 
 export function usePdfExport() {
   const tabs = useTabsStore();
@@ -39,9 +40,9 @@ export function usePdfExport() {
       await html2pdf().set(options).from(element).save();
       ui.toastSuccess('PDF 导出成功');
       return true;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('PDF 导出失败', e);
-      ui.toastError('PDF 导出失败: ' + e.message);
+      ui.toastError('PDF 导出失败: ' + toErrorMessage(e));
       return false;
     }
   }

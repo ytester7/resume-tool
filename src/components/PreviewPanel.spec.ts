@@ -23,6 +23,25 @@ describe('PreviewPanel', () => {
     const wrapper = mount(PreviewPanel);
     expect(wrapper.find('.preview-canvas').exists()).toBe(true);
   });
+
+  it('设置主题后在预览画布注入 CSS 变量', () => {
+    const tabs = useTabsStore();
+    tabs.open({
+      title: 'A',
+      theme: { primaryColor: '#ff0000', fontFamily: '' },
+      data: { ...defaultResumeData(), name: '张三' },
+    });
+    const wrapper = mount(PreviewPanel);
+    const style = wrapper.find('.preview-canvas').attributes('style') ?? '';
+    expect(style).toContain('--c-primary: #ff0000');
+  });
+
+  it('未设置主题时不注入 CSS 变量', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A', data: { ...defaultResumeData(), name: '张三' } });
+    const wrapper = mount(PreviewPanel);
+    expect(wrapper.find('.preview-canvas').attributes('style')).toBeUndefined();
+  });
 });
 
 describe('PreviewPanel 13 模板切换', () => {

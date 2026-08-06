@@ -15,20 +15,16 @@ function update(value: string) {
     <h3 class="section-heading">专业概述</h3>
     <textarea
       :value="summary"
-      @input="update(($event.target as HTMLTextAreaElement).value)"
       placeholder="用一段话概括你的技术栈、年限、量化成果和价值。例如：5年软件测试经验，精通 Selenium/Playwright 自动化，搭建过 CI 流水线，缺陷逃逸率降低 40%。"
       rows="4"
       class="summary-textarea"
+      aria-label="专业概述"
+      @input="update(($event.target as HTMLTextAreaElement).value)"
     />
   </section>
 </template>
 
 <style scoped>
-.editor-section { margin-bottom: 24px; }
-.section-heading {
-  margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #1890ff;
-  padding-bottom: 6px; border-bottom: 1px solid #e8e8e8;
-}
 .summary-textarea {
   width: 100%; padding: 8px 10px;
   border: 1px solid #d9d9d9; border-radius: 4px;
