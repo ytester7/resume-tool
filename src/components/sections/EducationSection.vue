@@ -6,9 +6,9 @@ import type { Education } from '@/types/resume';
 
 const tabs = useTabsStore();
 
-function updateField(idx: number, field: keyof Education, value: string) {
+function updateField<K extends keyof Education>(idx: number, field: K, value: Education[K]) {
   if (!tabs.active) return;
-  (tabs.active.data.education[idx] as any)[field] = value;
+  tabs.active.data.education[idx][field] = value;
   tabs.active.dirty = true;
 }
 
@@ -22,47 +22,29 @@ function add() { tabs.addEducation(); }
     <DraggableList :model-value="tabs.active?.data.education ?? []" @update:model-value="tabs.patchActive({ education: $event as Education[] })">
       <template #item="{ element, index }">
         <div class="edu-edit-row">
-          <span class="drag-handle"><AppIcon name="drag" /></span>
-          <input :value="element.school" @input="updateField(index, 'school', ($event.target as HTMLInputElement).value)" placeholder="学校名称" />
-          <input :value="element.major" @input="updateField(index, 'major', ($event.target as HTMLInputElement).value)" placeholder="专业" />
-          <input :value="element.degree" @input="updateField(index, 'degree', ($event.target as HTMLInputElement).value)" placeholder="学位（如：本科）" />
-          <input :value="element.time" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" placeholder="时间（如 2015-2019）" />
-          <button @click="remove(index)" class="remove-btn"><AppIcon name="trash" /></button>
+          <span class="drag-handle" aria-label="拖拽以调整教育背景顺序" role="button"><AppIcon name="drag" /></span>
+          <input :value="element.school" placeholder="学校名称" :aria-label="`教育 ${index + 1} 学校`" @input="updateField(index, 'school', ($event.target as HTMLInputElement).value)" />
+          <input :value="element.major" placeholder="专业" :aria-label="`教育 ${index + 1} 专业`" @input="updateField(index, 'major', ($event.target as HTMLInputElement).value)" />
+          <input :value="element.degree" placeholder="学位（如：本科）" :aria-label="`教育 ${index + 1} 学位`" @input="updateField(index, 'degree', ($event.target as HTMLInputElement).value)" />
+          <input :value="element.time" placeholder="时间（如 2015-2019）" :aria-label="`教育 ${index + 1} 时间`" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" />
+          <button class="remove-btn" :aria-label="`删除教育 ${element.school || index + 1}`" title="删除" @click="remove(index)"><AppIcon name="trash" /></button>
         </div>
       </template>
       <template #footer>
-        <button @click="add" class="add-btn"><AppIcon name="plus" /> 添加教育背景</button>
+        <button class="add-btn" aria-label="添加教育背景" @click="add"><AppIcon name="plus" /> 添加教育背景</button>
       </template>
     </DraggableList>
   </section>
 </template>
 
 <style scoped>
-.editor-section { margin-bottom: 24px; }
-.section-heading {
-  margin: 0 0 12px; font-size: 14px; font-weight: 600; color: #1890ff;
-  padding-bottom: 6px; border-bottom: 1px solid #e8e8e8;
-}
 .edu-edit-row {
   display: grid; grid-template-columns: 24px 1.2fr 1fr 0.8fr 1fr 32px;
   gap: 6px; align-items: center; margin-bottom: 6px;
 }
-.drag-handle { cursor: grab; color: #bbb; display: flex; align-items: center; }
 .edu-edit-row input {
   padding: 5px 8px; border: 1px solid #d9d9d9; border-radius: 4px;
   font-size: 12px; outline: none;
 }
 .edu-edit-row input:focus { border-color: #1890ff; }
-.remove-btn {
-  border: none; background: transparent; cursor: pointer;
-  color: #ff4d4f; padding: 4px; font-size: 14px;
-}
-.add-btn {
-  margin-top: 8px; padding: 6px 12px;
-  border: 1px dashed #1890ff; background: #fff;
-  color: #1890ff; cursor: pointer; border-radius: 4px;
-  font-size: 12px; display: inline-flex; align-items: center; gap: 4px;
-}
-.add-btn:hover { background: #f0f5ff; }
-:deep(.dragging) { opacity: 0.5; background: #e6f7ff; }
 </style>

@@ -2,7 +2,7 @@ import { useTabsStore } from '@/stores/tabs';
 import { useUiStore } from '@/stores/ui';
 import { collectOrphanedTabs, clearOrphanedTab } from './useAutoSave';
 import { parseResumeFile } from '@/utils/parseResume';
-import type { TemplateName, SectionKey } from '@/types/resume';
+import type { TemplateName, SectionId, ThemeConfig } from '@/types/resume';
 
 export function useStartupRecovery() {
   const tabs = useTabsStore();
@@ -26,7 +26,8 @@ export function useStartupRecovery() {
             title: orphan.data.title || '恢复的简历',
             data: parsed.data,
             template: (orphan.data.template as TemplateName) || 'classic',
-            sectionOrder: (orphan.data.sectionOrder as SectionKey[] | null) ?? null,
+            sectionOrder: (orphan.data.sectionOrder as SectionId[] | null) ?? null,
+            theme: (orphan.data.theme as ThemeConfig | null) ?? null,
             dirty: true,
           });
           clearOrphanedTab(orphan.key);

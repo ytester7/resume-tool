@@ -57,23 +57,23 @@ const LEVEL_WIDTH: Record<string, string> = {
 <style scoped>
 .skills-compact { display: flex; flex-wrap: wrap; gap: 8px; }
 .skill-tag { background: #f0f5ff; padding: 4px 10px; border-radius: 12px; font-size: 13px; }
-.skill-tag strong { color: #1890ff; }
+.skill-tag strong { color: var(--c-primary, #1890ff); }
 
 .skills-list { display: flex; flex-direction: column; gap: 6px; }
 .skill-row { display: flex; gap: 12px; font-size: 13px; line-height: 1.6; }
-.skill-category { min-width: 100px; font-weight: 600; color: #333; }
-.skill-items { flex: 1; color: #555; }
-.skill-level { color: #1890ff; font-size: 12px; }
+.skill-category { min-width: 100px; font-weight: 600; color: var(--c-text, #333); }
+.skill-items { flex: 1; color: var(--c-text-muted, #555); }
+.skill-level { color: var(--c-primary, #1890ff); font-size: 12px; }
 
 .skills-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.skills-table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+.skills-table td { padding: 6px 8px; border-bottom: 1px solid var(--c-border, #eee); }
 .skill-cat-cell { font-weight: 600; min-width: 100px; }
-.skill-level-cell { color: #1890ff; text-align: right; }
+.skill-level-cell { color: var(--c-primary, #1890ff); text-align: right; }
 
 .skills-bars { display: flex; flex-direction: column; gap: 10px; }
 .skill-bar-row { font-size: 13px; }
 .skill-bar-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
 .skill-bar-track { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
-.skill-bar-fill { height: 100%; background: #1890ff; transition: width 0.3s; }
-.skill-items { margin-top: 4px; color: #666; font-size: 12px; }
+.skill-bar-fill { height: 100%; background: var(--c-primary, #1890ff); transition: width 0.3s; }
+.skill-items { margin-top: 4px; color: var(--c-text-muted, #666); font-size: 12px; }
 </style>

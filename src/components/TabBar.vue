@@ -32,21 +32,32 @@ function onSwitch(id: string) {
 
 <template>
   <div class="tab-bar">
-    <div class="tab-list">
+    <div class="tab-list" role="tablist" aria-label="简历 Tab 列表">
       <div
         v-for="tab in tabs.tabs"
         :key="tab.id"
         :class="['tab-item', { active: tab.id === tabs.activeId }]"
+        role="tab"
+        :aria-selected="tab.id === tabs.activeId"
+        :tabindex="tab.id === tabs.activeId ? 0 : -1"
+        :aria-label="`切换到简历：${tab.title}${tab.dirty ? '（未保存）' : ''}`"
         @click="onSwitch(tab.id)"
+        @keydown.enter.prevent="onSwitch(tab.id)"
+        @keydown.space.prevent="onSwitch(tab.id)"
       >
         <span class="tab-title" :title="tab.title">{{ tab.title }}</span>
-        <span v-if="tab.dirty" class="tab-dirty-mark" title="未保存">●</span>
-        <button class="tab-close-btn" @click="onClose(tab.id, $event)" title="关闭">
+        <span v-if="tab.dirty" class="tab-dirty-mark" aria-hidden="true" title="未保存">●</span>
+        <button
+          class="tab-close-btn"
+          :aria-label="`关闭简历 ${tab.title}`"
+          title="关闭"
+          @click="onClose(tab.id, $event)"
+        >
           <AppIcon name="times" />
         </button>
       </div>
     </div>
-    <button class="tab-new-btn" @click="onNew" title="新建简历">
+    <button class="tab-new-btn" aria-label="新建简历" title="新建简历" @click="onNew">
       <AppIcon name="plus" /> 新建
     </button>
   </div>

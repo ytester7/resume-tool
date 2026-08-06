@@ -23,13 +23,13 @@ function itemKey(item: T, index: number): string {
 <template>
   <draggable
     :model-value="modelValue"
-    @update:model-value="emit('update:modelValue', $event as T[])"
     :item-key="itemKey as any"
     :handle="handle"
     :group="group"
     :animation="200"
     ghost-class="dragging"
     :swap-threshold="0.5"
+    @update:model-value="emit('update:modelValue', $event as T[])"
   >
     <template #header><slot name="header" /></template>
     <template #item="{ element, index }">

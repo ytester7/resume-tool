@@ -9,6 +9,9 @@ export type SectionKey =
   | 'summary' | 'skills' | 'experience' | 'projects'
   | 'education' | 'evaluation';
 
+/** 区块标识：内置区块用 SectionKey，自定义区块用 `custom:${id}` */
+export type SectionId = SectionKey | `custom:${string}`;
+
 export interface Skill { id: string; category: string; items: string; level: SkillLevel; }
 export interface Experience {
   id: string; company: string; role: string; time: string;
@@ -20,6 +23,7 @@ export interface Project {
 }
 export interface Education { id: string; school: string; major: string; degree: string; time: string; }
 export interface EvaluationItem { text: string; }
+export interface CustomSection { id: string; title: string; content: string; }
 
 export interface ResumeData {
   name: string; title: string; phone: string; email: string;
@@ -27,13 +31,21 @@ export interface ResumeData {
   github: string; website: string; summary: string;
   skills: Skill[]; experience: Experience[]; projects: Project[];
   education: Education[]; evaluation: EvaluationItem[];
+  customSections: CustomSection[];
+}
+
+/** 主题配置：主色 + 字体，作用于预览画布 */
+export interface ThemeConfig {
+  primaryColor: string;
+  fontFamily: string;
 }
 
 export interface ResumeFileMeta {
   template: TemplateName;
-  sectionOrder: SectionKey[] | null;
+  sectionOrder: SectionId[] | null;
   savedAt: string;
   version: '2.0';
+  theme?: ThemeConfig;
 }
 
 export type ResumeFile = ResumeData & { _meta?: ResumeFileMeta };
@@ -43,9 +55,10 @@ export interface ResumeSession {
   title: string;
   data: ResumeData;
   template: TemplateName;
-  sectionOrder: SectionKey[] | null;
+  sectionOrder: SectionId[] | null;
   fileHandle: FileSystemFileHandle | null;
   dirty: boolean;
+  theme: ThemeConfig | null;
 }
 
 export interface TemplateMeta {
@@ -64,6 +77,17 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   education: '教育背景',
   evaluation: '自我评价',
 };
+
+/**
+ * 区块显示名：内置区块取固定标签，自定义区块取用户标题（未找到时兜底）。
+ */
+export function getSectionLabel(id: SectionId, customSections?: CustomSection[]): string {
+  if (id.startsWith('custom:')) {
+    const found = customSections?.find(c => `custom:${c.id}` === id);
+    return found?.title.trim() || '自定义区块';
+  }
+  return SECTION_LABELS[id as SectionKey];
+}
 
 const SINGLE_COLUMN_DEFAULT: SectionKey[] = ['summary','skills','experience','projects','education','evaluation'];
 
@@ -92,6 +116,7 @@ export function defaultResumeData(): ResumeData {
     github: '', website: '', summary: '',
     skills: [], experience: [], projects: [], education: [],
     evaluation: [{ text: '' }, { text: '' }, { text: '' }],
+    customSections: [],
   };
 }
 

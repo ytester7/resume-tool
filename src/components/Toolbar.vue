@@ -17,19 +17,19 @@ defineProps<{
       <span>简历制作工具</span>
     </div>
     <div class="toolbar-actions">
-      <button class="tool-btn" @click="onNew" title="新建 (Ctrl+Shift+N)">
+      <button class="tool-btn" title="新建 (Ctrl+Shift+N)" @click="onNew">
         <AppIcon name="plus" /> 新建
       </button>
-      <button class="tool-btn" @click="onOpen" title="打开 (Ctrl+O)">
+      <button class="tool-btn" title="打开 (Ctrl+O)" @click="onOpen">
         <AppIcon name="upload" /> 打开
       </button>
-      <button class="tool-btn" @click="onSave" title="保存 (Ctrl+S)">
+      <button class="tool-btn" title="保存 (Ctrl+S)" @click="onSave">
         <AppIcon name="save" /> 保存
       </button>
-      <button class="tool-btn" @click="onSaveAs" title="另存为 (Ctrl+Shift+S)">
+      <button class="tool-btn" title="另存为 (Ctrl+Shift+S)" @click="onSaveAs">
         <AppIcon name="download" /> 另存为
       </button>
-      <button class="tool-btn primary" @click="onExportPdf" title="导出PDF (Ctrl+P)">
+      <button class="tool-btn primary" title="导出PDF (Ctrl+P)" @click="onExportPdf">
         <AppIcon name="fileAlt" /> 导出PDF
       </button>
     </div>
@@ -65,5 +65,17 @@ defineProps<{
   background: #f5f5f5; border: 1px solid #d9d9d9;
   border-radius: 3px; font-size: 11px;
   font-family: 'Consolas', monospace;
+}
+
+/* 窄屏：动作按钮换行、隐藏快捷键提示以节省空间 */
+@media (max-width: 767px) {
+  .toolbar {
+    flex-wrap: wrap; gap: 8px;
+    padding: 6px 10px;
+  }
+  .toolbar-brand { font-size: 14px; }
+  .toolbar-actions { flex-wrap: wrap; }
+  .tool-btn { padding: 4px 8px; font-size: 12px; }
+  .toolbar-shortcuts { display: none; }
 }
 </style>

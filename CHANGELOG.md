@@ -5,6 +5,29 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.1.0] - 2026-08-06
+
+### Added
+
+- **自定义区块**：编辑面板新增「自定义区块」区，可添加任意标题 + 多行内容的区块（如证书资质、语言能力、开源贡献）。
+  - 自定义区块以 `custom:${id}` 参与 8 套可变序模板的区块排序（新增自动追加到末尾，删除自动清理顺序）。
+  - 数据随 JSON 文件保存 / localStorage 恢复 / 孤儿 Tab 恢复完整闭环，旧文件向后兼容（`_meta.version` 保持 `2.0`）。
+- **主题设置**：编辑面板新增「主题设置」区（主色预设 + 自定义取色器 + 字体下拉 + 恢复默认）。
+  - 引入 CSS 变量 token 层（`--c-primary` / `--c-bg` / `--c-text` / `--c-text-muted` / `--c-border` / `--font-family`），13 套模板与共享组件全部以 `var(--xxx, 原值)` 替换，未设置主题时视觉零回归。
+  - 主题随 `_meta.theme` 存档、随 localStorage 快照恢复、随 PDF 导出（作用于 `.preview-canvas` 子树）。
+  - 模板「性格色」（如 Tech 辅助蓝、CardStyle 分区块彩色）保持硬编码不参与主题化。
+
+### Changed
+
+- `SectionKey` 扩展出 `SectionId = SectionKey | custom:${string}`，`sectionOrder` 相关类型放宽以支持自定义区块。
+- `parseResumeFile` / `serializeResume` 支持 `customSections` 与 `theme` 字段的宽容解析与序列化。
+- tabs store 新增 `addCustomSection` / `removeCustomSection` / `setTheme` action。
+- 8 套单列模板标题渲染改用 `getSectionLabel`（自定义区块显示用户标题）。
+
+### Fixed
+
+- 无
+
 ## [2.0.0] - 2026-07-24
 
 ### Added

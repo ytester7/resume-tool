@@ -157,6 +157,55 @@ describe('useTabsStore', () => {
     expect(tabs.active?.data.education.length).toBe(0);
   });
 
+  it('addCustomSection 在可变序模板自动 append 到 sectionOrder', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' }); // 默认 classic，sectionOrderMutable
+    tabs.addCustomSection();
+    expect(tabs.active?.data.customSections.length).toBe(1);
+    const id = tabs.active!.data.customSections[0].id;
+    expect(tabs.active?.sectionOrder).toEqual([
+      'summary', 'skills', 'experience', 'projects', 'education', 'evaluation',
+      `custom:${id}`,
+    ]);
+    expect(tabs.active?.dirty).toBe(true);
+  });
+
+  it('addCustomSection 在固定布局模板不 append sectionOrder', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A', template: 'modern' });
+    tabs.addCustomSection();
+    expect(tabs.active?.data.customSections.length).toBe(1);
+    expect(tabs.active?.sectionOrder).toBe(null);
+  });
+
+  it('removeCustomSection 清理数据与 sectionOrder', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.addCustomSection();
+    tabs.addCustomSection();
+    const firstId = tabs.active!.data.customSections[0].id;
+    tabs.removeCustomSection(0);
+    expect(tabs.active?.data.customSections.length).toBe(1);
+    expect(tabs.active?.sectionOrder?.filter(k => k === `custom:${firstId}`)).toEqual([]);
+    expect(tabs.active?.sectionOrder).toHaveLength(7); // 6 内置 + 1 剩余 custom
+  });
+
+  it('setTheme 更新当前 Tab 主题并标记 dirty', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.setTheme({ primaryColor: '#ff0000', fontFamily: '' });
+    expect(tabs.active?.theme).toEqual({ primaryColor: '#ff0000', fontFamily: '' });
+    expect(tabs.active?.dirty).toBe(true);
+    tabs.setTheme(null);
+    expect(tabs.active?.theme).toBe(null);
+  });
+
+  it('open 透传 theme', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A', theme: { primaryColor: '#123456', fontFamily: 'serif' } });
+    expect(tabs.active?.theme).toEqual({ primaryColor: '#123456', fontFamily: 'serif' });
+  });
+
   it('findExistingByTitle 按标题找已存在 Tab', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });

@@ -1,7 +1,7 @@
 import { computed } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import { TEMPLATE_REGISTRY } from '@/types/resume';
-import type { SectionKey } from '@/types/resume';
+import type { SectionId } from '@/types/resume';
 
 export function useSectionOrder() {
   const tabs = useTabsStore();
@@ -12,13 +12,13 @@ export function useSectionOrder() {
 
   const mutable = computed(() => meta.value?.sectionOrderMutable ?? false);
 
-  const order = computed<SectionKey[]>({
+  const order = computed<SectionId[]>({
     get() {
       if (!tabs.active || !meta.value) return [];
       if (!meta.value.sectionOrderMutable) return [];
       return tabs.active.sectionOrder ?? meta.value.defaultSectionOrder;
     },
-    set(newOrder: SectionKey[]) {
+    set(newOrder: SectionId[]) {
       tabs.setSectionOrder(newOrder);
     },
   });

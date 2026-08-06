@@ -10,6 +10,8 @@ const ui = useUiStore();
       v-for="t in ui.toasts"
       :key="t.id"
       :class="['toast-item', `toast-${t.type}`]"
+      :role="t.type === 'error' ? 'alert' : 'status'"
+      :aria-live="t.type === 'error' ? 'assertive' : 'polite'"
       @click="ui.dismissToast(t.id)"
     >
       {{ t.message }}

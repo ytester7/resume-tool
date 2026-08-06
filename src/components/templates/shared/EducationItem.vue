@@ -24,6 +24,6 @@ defineProps<{ items: Education[]; }>();
 .education-item { font-size: 13px; }
 .edu-header { display: flex; justify-content: space-between; }
 .edu-school { font-weight: 600; }
-.edu-time { color: #999; font-size: 12px; }
-.edu-meta { color: #666; margin-top: 2px; }
+.edu-time { color: var(--c-text-muted, #999); font-size: 12px; }
+.edu-meta { color: var(--c-text-muted, #666); margin-top: 2px; }
 </style>

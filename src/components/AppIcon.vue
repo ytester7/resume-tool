@@ -12,7 +12,8 @@ const style = computed(() => props.size ? { fontSize: props.size } : {});
 </script>
 
 <template>
-  <span class="app-icon" v-html="svg" :style="style" />
+  <!-- aria-hidden 让屏幕阅读器跳过装饰性图标；图标含义由父级按钮的 aria-label 提供 -->
+  <span class="app-icon" aria-hidden="true" :style="style" v-html="svg" />
 </template>
 
 <style scoped>

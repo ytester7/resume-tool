@@ -81,20 +81,20 @@ defineProps<{
 
 <style scoped>
 .modern-template {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
   display: flex;
   min-height: 297mm;
-  color: #334155;
+  color: var(--c-text, #334155);
   line-height: 1.6;
-  background: #fff;
+  background: var(--c-bg, #fff);
 }
 
 .sidebar {
   width: 230px;
   flex-shrink: 0;
-  background: #f8fafc;
+  background: var(--c-bg, #f8fafc);
   padding: 24px 16px;
-  border-right: 3px solid #10b981;
+  border-right: 3px solid var(--c-primary, #10b981);
   box-sizing: border-box;
 }
 
@@ -102,18 +102,18 @@ defineProps<{
   text-align: center;
   margin-bottom: 18px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--c-border, #e2e8f0);
 }
 .sidebar-header h1 {
   margin: 0 0 4px;
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text, #0f172a);
   letter-spacing: 2px;
 }
 .sidebar-header .title {
   font-size: 12px;
-  color: #10b981;
+  color: var(--c-primary, #10b981);
   font-weight: 500;
   overflow-wrap: break-word;
   word-break: break-word;
@@ -124,12 +124,12 @@ defineProps<{
 .sidebar-title {
   font-size: 11px;
   font-weight: 700;
-  color: #10b981;
+  color: var(--c-primary, #10b981);
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 8px;
   padding-bottom: 4px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--c-border, #e2e8f0);
 }
 
 .intention-list {
@@ -137,7 +137,7 @@ defineProps<{
   padding: 0;
   margin: 0;
   font-size: 11px;
-  color: #475569;
+  color: var(--c-text-muted, #475569);
 }
 .intention-list li {
   margin-bottom: 6px;
@@ -161,16 +161,16 @@ defineProps<{
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text, #0f172a);
   padding-bottom: 4px;
-  border-bottom: 2px solid #10b981;
+  border-bottom: 2px solid var(--c-primary, #10b981);
   letter-spacing: 1px;
 }
 
 .summary-text {
   margin: 0;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--c-text-muted, #475569);
   line-height: 1.7;
   text-align: justify;
 }
