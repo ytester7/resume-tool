@@ -1,4 +1,4 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 本文件是给所有 AI 编码助手（Claude Code / Cursor / Windsurf / Trae / Codex 等）的入口。
 项目内挂载了 [mattpocock/skills](https://github.com/mattpocock/skills) 的精选子集，适用于 **vibe coding** 场景：续命、救火、定期治理。
@@ -32,6 +32,47 @@
                        上下文要爆      Bug 修不动    每 3-5 天
                        handoff      diagnosing-bugs  improve-codebase-architecture
 ```
+
+## Git 工作流
+
+项目采用 **GitHub Flow**，完整规范见 [.github/GIT_WORKFLOW.md](./.github/GIT_WORKFLOW.md)。
+以下是 agent 执行 git 操作时必须遵守的要点：
+
+### 何时动手
+
+- **只在用户明确要求时**执行 commit / push / 建分支 / 开 PR，不要主动提交。
+- 用户说"提交"时：先 `git status` + `git diff` 确认改动范围，再按下方规范提交；不确定的部分先问。
+
+### Commit 规范（Conventional Commits）
+
+- 格式：`<type>(<scope>): <subject>`，如 `feat(templates): 新增主题设置`
+- type 清单：`feat` / `fix` / `test` / `docs` / `refactor` / `chore` / `style` / `perf` / `ci` / `build`
+- subject 用祈使句、不超过 50 字符、首字母小写、不加句号
+- 提交前先看 `git log` 最近几条，保持与仓库历史风格一致
+- body 说明"为什么"而非"做了什么"（diff 已展示做了什么）
+
+### 分支规范
+
+- 从 `main` 拉分支，命名 `feat/<描述>` / `fix/<描述>` / `docs/<描述>` / `refactor/<描述>` / `chore/<描述>`
+- 分支名小写短横线；功能分支生命周期尽量短（≤ 3 天），合并后删除
+
+### 红线（禁止操作）
+
+- 禁止 `push --force` 到 `main`；其他分支 force push 也需用户明确授权
+- 禁止修改 git config
+- 禁止 `git add -A` / `git add .`（可能误加 .env / 密钥 / 大文件）——按文件名精确添加
+- 不直接 push 到 `main`（除非用户明确要求），默认走 PR 合并
+
+### PR 流程
+
+- 用户要求开 PR 时：按 [.github/GIT_WORKFLOW.md](./.github/GIT_WORKFLOW.md) 与 [.github/PULL_REQUEST_TEMPLATE.md](./.github/PULL_REQUEST_TEMPLATE.md) 执行
+- 合并默认 **Squash and merge**，PR 标题与最终 commit message 一致
+- Review 通过前必须跑通：`npx vue-tsc --noEmit` / `npx vitest run` / `npm run build` / `npx eslint src/ e2e/`
+
+### 版本与发布
+
+- 发版前更新 `CHANGELOG.md`，然后 `git tag -a vX.Y.Z -m "Release vX.Y.Z"` 并 `git push origin vX.Y.Z`
+- 版本号遵循 SemVer：新增功能 MINOR、Bug 修复 PATCH、破坏性变更 MAJOR
 
 ## 升级 skills
 
