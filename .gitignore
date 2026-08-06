@@ -32,6 +32,7 @@ build/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.trae/
 *.suo
 *.ntvs*
 *.njsproj
