@@ -19,6 +19,7 @@ export function useStartupRecovery() {
     });
 
     if (action === '全部恢复') {
+      let recovered = 0;
       for (const orphan of orphans) {
         try {
           const parsed = parseResumeFile(orphan.data.data);
@@ -31,11 +32,21 @@ export function useStartupRecovery() {
             dirty: true,
           });
           clearOrphanedTab(orphan.key);
+          recovered++;
         } catch {
           clearOrphanedTab(orphan.key);
         }
       }
-      ui.toastSuccess(`已恢复 ${orphans.length} 个简历`);
+      if (recovered === 0) {
+        ui.toastWarning('未能恢复任何简历，数据可能已损坏');
+      } else {
+        const failed = orphans.length - recovered;
+        ui.toastSuccess(
+          failed > 0
+            ? `已恢复 ${recovered} 个简历，${failed} 个数据损坏已丢弃`
+            : `已恢复 ${recovered} 个简历`,
+        );
+      }
     } else {
       for (const orphan of orphans) {
         clearOrphanedTab(orphan.key);
