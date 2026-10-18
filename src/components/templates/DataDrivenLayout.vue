@@ -2,6 +2,14 @@
 import { computed } from 'vue';
 import { useResumeSections } from './shared/useResumeSections';
 import { getSectionLabel } from '@/types/resume';
+import {
+  asText,
+  countBullets,
+  hasContactInfo,
+  hasIdentity,
+  hasText,
+  visibleProjects,
+} from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import type { ResumeData, SectionId } from '@/types/resume';
 
@@ -15,43 +23,47 @@ const { renderSection, visibleSections } = useResumeSections(props, {
   evaluationVariant: 'bullets',
 });
 
-const coreDutiesCount = computed(() =>
-  props.data.experience.reduce((sum, exp) => sum + (exp.items ? exp.items.length : 0), 0),
-);
+/** 只展示真正有值的统计项，避免「0+ 核心职责 / 0 项目经历」占位 */
+const stats = computed(() => {
+  const result: { value: string; label: string }[] = [];
+
+  if (hasText(props.data.experienceYears)) {
+    result.push({ value: asText(props.data.experienceYears), label: '工作经验' });
+  }
+  const duties = countBullets(props.data.experience);
+  if (duties > 0) {
+    result.push({ value: `${duties}+`, label: '核心职责' });
+  }
+  const projectCount = visibleProjects(props.data.projects).length;
+  if (projectCount > 0) {
+    result.push({ value: String(projectCount), label: '项目经历' });
+  }
+  if (hasText(props.data.salary)) {
+    result.push({ value: asText(props.data.salary), label: '期望薪资' });
+  }
+
+  return result;
+});
+
+const showHeader = computed(() => hasIdentity(props.data) || stats.value.length > 0);
 </script>
 
 <template>
   <div class="resume data-driven-resume">
-    <header class="resume-header">
+    <header v-if="showHeader" class="resume-header">
       <div class="header-content">
         <div class="header-left">
           <h1 v-if="data.name" class="resume-name">{{ data.name }}</h1>
           <p v-if="data.title" class="resume-title">{{ data.title }}</p>
         </div>
-        <div class="header-right">
-          <ContactItems
-            v-if="data.phone || data.email || data.github || data.website"
-            :data="data"
-            variant="stacked"
-          />
+        <div v-if="hasContactInfo(data)" class="header-right">
+          <ContactItems :data="data" variant="stacked" />
         </div>
       </div>
-      <div class="stats-bar">
-        <div v-if="data.experienceYears" class="stat-item">
-          <div class="stat-value">{{ data.experienceYears }}</div>
-          <div class="stat-label">工作经验</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ coreDutiesCount }}+</div>
-          <div class="stat-label">核心职责</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ data.projects.length }}</div>
-          <div class="stat-label">项目经历</div>
-        </div>
-        <div v-if="data.salary" class="stat-item">
-          <div class="stat-value">{{ data.salary }}</div>
-          <div class="stat-label">期望薪资</div>
+      <div v-if="stats.length" class="stats-bar">
+        <div v-for="stat in stats" :key="stat.label" class="stat-item">
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
         </div>
       </div>
     </header>

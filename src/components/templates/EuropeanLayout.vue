@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResumeData, SectionKey } from '@/types/resume';
+import {
+  hasContactInfo,
+  hasIdentity,
+  sectionHasContent,
+} from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import SkillList from './shared/SkillList.vue';
 import ExperienceItem from './shared/ExperienceItem.vue';
@@ -7,52 +13,64 @@ import ProjectItem from './shared/ProjectItem.vue';
 import EducationItem from './shared/EducationItem.vue';
 import EvaluationList from './shared/EvaluationList.vue';
 
-defineProps<{
+const props = defineProps<{
   data: ResumeData;
   sectionOrder?: SectionKey[];
 }>();
+
+const hasLeft = computed(
+  () =>
+    sectionHasContent(props.data, 'skills') ||
+    sectionHasContent(props.data, 'education') ||
+    sectionHasContent(props.data, 'evaluation'),
+);
+
+const hasRight = computed(
+  () =>
+    sectionHasContent(props.data, 'summary') ||
+    sectionHasContent(props.data, 'experience') ||
+    sectionHasContent(props.data, 'projects'),
+);
 </script>
 
 <template>
   <div class="european-template">
-    <header class="resume-header">
+    <header v-if="hasIdentity(data)" class="resume-header">
       <div class="header-main">
         <div class="header-left">
           <h1 v-if="data.name">{{ data.name }}</h1>
           <div v-if="data.title" class="title">{{ data.title }}</div>
         </div>
         <div
-          v-if="data.phone || data.email || data.github || data.website"
+          v-if="hasContactInfo(data)"
           class="header-right"
         >
           <ContactItems :data="data" variant="stacked" />
         </div>
       </div>
       <div
-        v-if="data.jobIntention || data.salary || data.age || data.experienceYears"
+        v-if="data.jobIntention || data.salary"
         class="header-intention"
       >
         <span v-if="data.jobIntention">求职意向：{{ data.jobIntention }}</span>
         <span v-if="data.salary">期望薪资：{{ data.salary }}</span>
-        <span v-if="data.age">{{ data.age }}</span>
-        <span v-if="data.experienceYears">{{ data.experienceYears }}经验</span>
       </div>
     </header>
 
-    <div class="columns-wrapper">
-      <div class="col-left">
-        <section v-if="data.skills.length" class="section">
+    <div v-if="hasLeft || hasRight" class="columns-wrapper">
+      <div v-if="hasLeft" :class="['col-left', { 'is-full': !hasRight }]">
+        <section v-if="sectionHasContent(data, 'skills')" class="section">
           <h2 class="section-title">专业技能</h2>
           <SkillList :skills="data.skills" variant="list" />
         </section>
 
-        <section v-if="data.education.length" class="section">
+        <section v-if="sectionHasContent(data, 'education')" class="section">
           <h2 class="section-title">教育背景</h2>
           <EducationItem :items="data.education" />
         </section>
 
         <section
-          v-if="data.evaluation.some(e => e.text.trim())"
+          v-if="sectionHasContent(data, 'evaluation')"
           class="section"
         >
           <h2 class="section-title">自我评价</h2>
@@ -60,18 +78,18 @@ defineProps<{
         </section>
       </div>
 
-      <div class="col-right">
-        <section v-if="data.summary" class="section">
+      <div v-if="hasRight" :class="['col-right', { 'is-full': !hasLeft }]">
+        <section v-if="sectionHasContent(data, 'summary')" class="section">
           <h2 class="section-title">专业概述</h2>
           <p class="summary-text">{{ data.summary }}</p>
         </section>
 
-        <section v-if="data.experience.length" class="section">
+        <section v-if="sectionHasContent(data, 'experience')" class="section">
           <h2 class="section-title">工作经历</h2>
           <ExperienceItem :items="data.experience" />
         </section>
 
-        <section v-if="data.projects.length" class="section">
+        <section v-if="sectionHasContent(data, 'projects')" class="section">
           <h2 class="section-title">项目经历</h2>
           <ProjectItem :items="data.projects" />
         </section>
@@ -150,6 +168,18 @@ defineProps<{
   width: 50%;
   padding: 24px 24px 24px 20px;
   box-sizing: border-box;
+}
+
+/* 另一栏没有任何内容时折叠为单栏，避免半页空白 */
+.col-left.is-full {
+  width: 100%;
+  padding-right: 24px;
+  border-right: none;
+}
+
+.col-right.is-full {
+  width: 100%;
+  padding-left: 24px;
 }
 
 .section { margin-bottom: 16px; }

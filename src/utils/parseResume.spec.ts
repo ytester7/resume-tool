@@ -134,6 +134,100 @@ describe('parseResumeFile', () => {
     const result = parseResumeFile(raw);
     expect(result.theme).toBe(null);
   });
+
+  it('photo 字段保留，缺失时为空字符串', () => {
+    const withPhoto = parseResumeFile({ ...baseValid, photo: 'data:image/jpeg;base64,AAAA' });
+    expect(withPhoto.data.photo).toBe('data:image/jpeg;base64,AAAA');
+    expect(parseResumeFile({ ...baseValid }).data.photo).toBe('');
+  });
+
+  it('targetJd 随 _meta 解析', () => {
+    const raw = {
+      ...baseValid,
+      _meta: { template: 'classic', sectionOrder: null, savedAt: '', version: '2.0', targetJd: ' 熟悉 pytest ' },
+    };
+    expect(parseResumeFile(raw).targetJd).toBe(' 熟悉 pytest ');
+  });
+});
+
+describe('parseResumeFile 深层字段补全', () => {
+  it('顶层字符串字段 trim，数字转字符串', () => {
+    const raw = { name: '  李四  ', title: 42, age: 26 };
+    const result = parseResumeFile(raw);
+    expect(result.data.name).toBe('李四');
+    expect(result.data.title).toBe('42');
+    expect(result.data.age).toBe('26');
+  });
+
+  it('缺少 items 的 experience/project 自动补空数组', () => {
+    const result = parseResumeFile({
+      experience: [{ company: '腾讯' }],
+      projects: [{ name: '项目' }],
+    });
+    expect(result.data.experience[0]).toMatchObject({
+      company: '腾讯', role: '', time: '', description: '', achievement: '', items: [],
+    });
+    expect(result.data.projects[0]).toMatchObject({
+      name: '项目', time: '', role: '', background: '', subtitle: '', achievement: '', items: [],
+    });
+    expect(result.data.experience[0].id).not.toBe('');
+    expect(result.data.projects[0].id).not.toBe('');
+  });
+
+  it('items 为多行字符串时按行拆成数组', () => {
+    const result = parseResumeFile({
+      experience: [{ company: 'A', items: '搭建框架\n\n优化流程\r\n' }],
+      projects: [{ name: 'P', items: '一条内容' }],
+    });
+    expect(result.data.experience[0].items).toEqual(['搭建框架', '优化流程']);
+    expect(result.data.projects[0].items).toEqual(['一条内容']);
+  });
+
+  it('items 数组中的空白项保留（编辑器可继续填写），非字符串转空串', () => {
+    const result = parseResumeFile({
+      experience: [{ company: 'A', items: ['a', '', null, 3] }],
+    });
+    expect(result.data.experience[0].items).toEqual(['a', '', '', '3']);
+  });
+
+  it('skills 支持字符串数组与缺字段对象，并补齐 id', () => {
+    const result = parseResumeFile({
+      skills: ['Python', { category: '接口测试' }, null, 42],
+    });
+    expect(result.data.skills).toHaveLength(2);
+    expect(result.data.skills[0]).toMatchObject({ category: '', items: 'Python', level: '' });
+    expect(result.data.skills[1]).toMatchObject({ category: '接口测试', items: '', level: '' });
+    expect(result.data.skills[0].id).not.toBe('');
+    expect(result.data.skills[1].id).not.toBe('');
+  });
+
+  it('skills.items 为数组时转成顿号分隔文本', () => {
+    const result = parseResumeFile({
+      skills: [{ category: '语言', items: ['Python', 'SQL', '', 3] }],
+    });
+    expect(result.data.skills[0].items).toBe('Python、SQL、3');
+  });
+
+  it('experience/projects/education 过滤非对象项，保留空对象用于编辑', () => {
+    const result = parseResumeFile({
+      experience: [null, 'invalid', {}],
+      projects: [null, {}],
+      education: ['invalid', {}],
+    });
+    expect(result.data.experience).toHaveLength(1);
+    expect(result.data.projects).toHaveLength(1);
+    expect(result.data.education).toHaveLength(1);
+    expect(result.data.experience[0].items).toEqual([]);
+  });
+
+  it('evaluation 数组中的数字/对象字段宽容解析', () => {
+    const result = parseResumeFile({
+      evaluation: [{ text: 42 }, { text: null }, '  ok  ', 7, null],
+    });
+    expect(result.data.evaluation).toEqual([
+      { text: '42' }, { text: '' }, { text: 'ok' }, { text: '7' }, { text: '' },
+    ]);
+  });
 });
 
 describe('serializeResume', () => {

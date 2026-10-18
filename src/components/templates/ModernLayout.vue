@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResumeData, SectionKey } from '@/types/resume';
+import {
+  hasContactInfo,
+  hasIdentity,
+  sectionHasContent,
+} from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import SkillList from './shared/SkillList.vue';
 import ExperienceItem from './shared/ExperienceItem.vue';
@@ -7,22 +13,30 @@ import ProjectItem from './shared/ProjectItem.vue';
 import EducationItem from './shared/EducationItem.vue';
 import EvaluationList from './shared/EvaluationList.vue';
 
-defineProps<{
+const props = defineProps<{
   data: ResumeData;
   sectionOrder?: SectionKey[];
 }>();
+
+// 侧栏内容全部缺失时整栏隐藏，避免留下一条 230px 的空色块
+const hasSidebar = computed(
+  () =>
+    hasIdentity(props.data) ||
+    sectionHasContent(props.data, 'skills') ||
+    sectionHasContent(props.data, 'education'),
+);
 </script>
 
 <template>
   <div class="modern-template">
-    <aside class="sidebar">
-      <div class="sidebar-header">
+    <aside v-if="hasSidebar" class="sidebar">
+      <div v-if="data.name || data.title" class="sidebar-header">
         <h1 v-if="data.name">{{ data.name }}</h1>
         <div v-if="data.title" class="title">{{ data.title }}</div>
       </div>
 
       <div
-        v-if="data.phone || data.email || data.github || data.website"
+        v-if="hasContactInfo(data)"
         class="sidebar-section"
       >
         <div class="sidebar-title">联系方式</div>
@@ -30,46 +44,45 @@ defineProps<{
       </div>
 
       <div
-        v-if="data.jobIntention || data.salary || data.experienceYears"
+        v-if="data.jobIntention || data.salary"
         class="sidebar-section"
       >
         <div class="sidebar-title">求职意向</div>
         <ul class="intention-list">
           <li v-if="data.jobIntention">{{ data.jobIntention }}</li>
           <li v-if="data.salary">{{ data.salary }}</li>
-          <li v-if="data.experienceYears">{{ data.experienceYears }}经验</li>
         </ul>
       </div>
 
-      <div v-if="data.skills.length" class="sidebar-section">
+      <div v-if="sectionHasContent(data, 'skills')" class="sidebar-section">
         <div class="sidebar-title">专业技能</div>
         <SkillList :skills="data.skills" variant="compact" />
       </div>
 
-      <div v-if="data.education.length" class="sidebar-section">
+      <div v-if="sectionHasContent(data, 'education')" class="sidebar-section">
         <div class="sidebar-title">教育背景</div>
         <EducationItem :items="data.education" />
       </div>
     </aside>
 
     <main class="template-main">
-      <section v-if="data.summary" class="section">
+      <section v-if="sectionHasContent(data, 'summary')" class="section">
         <h2 class="section-title">专业概述</h2>
         <p class="summary-text">{{ data.summary }}</p>
       </section>
 
-      <section v-if="data.experience.length" class="section">
+      <section v-if="sectionHasContent(data, 'experience')" class="section">
         <h2 class="section-title">工作经历</h2>
         <ExperienceItem :items="data.experience" />
       </section>
 
-      <section v-if="data.projects.length" class="section">
+      <section v-if="sectionHasContent(data, 'projects')" class="section">
         <h2 class="section-title">项目经历</h2>
         <ProjectItem :items="data.projects" />
       </section>
 
       <section
-        v-if="data.evaluation.some(e => e.text.trim())"
+        v-if="sectionHasContent(data, 'evaluation')"
         class="section"
       >
         <h2 class="section-title">自我评价</h2>
