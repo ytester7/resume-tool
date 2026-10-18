@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResumeData, SectionKey } from '@/types/resume';
+import {
+  hasContactInfo,
+  hasIdentity,
+  hasText,
+  sectionHasContent,
+} from '@/utils/resumeView';
 import AppIcon from '@/components/AppIcon.vue';
 import ContactItems from './shared/ContactItems.vue';
 import SkillList from './shared/SkillList.vue';
@@ -8,16 +15,26 @@ import ProjectItem from './shared/ProjectItem.vue';
 import EducationItem from './shared/EducationItem.vue';
 import EvaluationList from './shared/EvaluationList.vue';
 
-defineProps<{
+const props = defineProps<{
   data: ResumeData;
   sectionOrder?: SectionKey[];
 }>();
+
+// 左侧渐变栏只承载姓名与四个联系渠道，全空时整栏隐藏
+const railVisible = computed(
+  () =>
+    hasText(props.data.name) ||
+    hasText(props.data.phone) ||
+    hasText(props.data.email) ||
+    hasText(props.data.github) ||
+    hasText(props.data.website),
+);
 </script>
 
 <template>
   <div class="tech-gradient-template">
-    <aside class="gradient-bar">
-      <div class="avatar">{{ data.name ? data.name.charAt(0) : '?' }}</div>
+    <aside v-if="railVisible" class="gradient-bar">
+      <div v-if="data.name" class="avatar">{{ data.name.charAt(0) }}</div>
       <div v-if="data.phone" class="bar-icon"><AppIcon name="phone" /></div>
       <div v-if="data.email" class="bar-icon"><AppIcon name="email" /></div>
       <div v-if="data.github" class="bar-icon"><AppIcon name="github" /></div>
@@ -25,53 +42,51 @@ defineProps<{
     </aside>
 
     <main class="template-main">
-      <header class="resume-header">
+      <header v-if="hasIdentity(data)" class="resume-header">
         <h1 v-if="data.name">{{ data.name }}</h1>
         <div v-if="data.title" class="title">{{ data.title }}</div>
         <div
-          v-if="data.phone || data.email || data.github || data.website"
+          v-if="hasContactInfo(data)"
           class="header-contact"
         >
           <ContactItems :data="data" variant="inline" />
         </div>
         <div
-          v-if="data.jobIntention || data.salary || data.experienceYears || data.age"
+          v-if="data.jobIntention || data.salary"
           class="header-intention"
         >
           <span v-if="data.jobIntention" class="tag">{{ data.jobIntention }}</span>
           <span v-if="data.salary" class="tag">{{ data.salary }}</span>
-          <span v-if="data.experienceYears" class="tag">{{ data.experienceYears }}经验</span>
-          <span v-if="data.age" class="tag">{{ data.age }}</span>
         </div>
       </header>
 
-      <section v-if="data.summary" class="section">
+      <section v-if="sectionHasContent(data, 'summary')" class="section">
         <h2 class="section-title">专业概述</h2>
         <p class="summary-text">{{ data.summary }}</p>
       </section>
 
-      <section v-if="data.skills.length" class="section">
+      <section v-if="sectionHasContent(data, 'skills')" class="section">
         <h2 class="section-title">专业技能</h2>
         <SkillList :skills="data.skills" variant="bars" />
       </section>
 
-      <section v-if="data.experience.length" class="section">
+      <section v-if="sectionHasContent(data, 'experience')" class="section">
         <h2 class="section-title">工作经历</h2>
         <ExperienceItem :items="data.experience" />
       </section>
 
-      <section v-if="data.projects.length" class="section">
+      <section v-if="sectionHasContent(data, 'projects')" class="section">
         <h2 class="section-title">项目经历</h2>
         <ProjectItem :items="data.projects" />
       </section>
 
-      <section v-if="data.education.length" class="section">
+      <section v-if="sectionHasContent(data, 'education')" class="section">
         <h2 class="section-title">教育背景</h2>
         <EducationItem :items="data.education" />
       </section>
 
       <section
-        v-if="data.evaluation.some(e => e.text.trim())"
+        v-if="sectionHasContent(data, 'evaluation')"
         class="section"
       >
         <h2 class="section-title">自我评价</h2>

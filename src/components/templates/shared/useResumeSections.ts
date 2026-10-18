@@ -1,5 +1,6 @@
 import { h, computed } from 'vue';
 import type { ResumeData, SectionId } from '@/types/resume';
+import { sectionHasContent as hasSectionContent } from '@/utils/resumeView';
 import SkillList from './SkillList.vue';
 import ExperienceItem from './ExperienceItem.vue';
 import ProjectItem from './ProjectItem.vue';
@@ -34,25 +35,12 @@ export function useResumeSections(
   const { skillVariant = 'list', evaluationVariant = 'paragraphs' } = options;
 
   function sectionHasContent(key: SectionId): boolean {
-    if (key.startsWith('custom:')) {
-      const sec = props.data.customSections.find(c => `custom:${c.id}` === key);
-      return Boolean(sec && (sec.title.trim() || sec.content.trim()));
-    }
-    const d = props.data;
-    switch (key) {
-      case 'summary': return !!d.summary.trim();
-      case 'skills': return d.skills.length > 0;
-      case 'experience': return d.experience.length > 0;
-      case 'projects': return d.projects.length > 0;
-      case 'education': return d.education.length > 0;
-      case 'evaluation': return d.evaluation.some(e => e.text.trim());
-    }
-    return false;
+    return hasSectionContent(props.data, key);
   }
 
   function renderSection(key: SectionId) {
     if (key.startsWith('custom:')) {
-      const sec = props.data.customSections.find(c => `custom:${c.id}` === key);
+      const sec = (props.data.customSections ?? []).find(c => `custom:${c.id}` === key);
       if (!sec) return null;
       return h('div', { class: 'section-custom', style: { whiteSpace: 'pre-wrap' } }, sec.content);
     }

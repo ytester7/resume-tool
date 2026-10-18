@@ -1,28 +1,53 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResumeData, SectionKey } from '@/types/resume';
+import {
+  asText,
+  hasContactInfo,
+  hasIdentity,
+  sectionHasContent,
+  visibleEducation,
+} from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import SkillList from './shared/SkillList.vue';
 import ExperienceItem from './shared/ExperienceItem.vue';
 import ProjectItem from './shared/ProjectItem.vue';
 import EvaluationList from './shared/EvaluationList.vue';
 
-defineProps<{
+const props = defineProps<{
   data: ResumeData;
   sectionOrder?: SectionKey[];
 }>();
+
+const hasSidebar = computed(
+  () =>
+    hasIdentity(props.data) ||
+    sectionHasContent(props.data, 'skills') ||
+    sectionHasContent(props.data, 'education'),
+);
+
+const educationList = computed(() =>
+  visibleEducation(props.data.education).map(edu => ({
+    id: edu.id,
+    school: asText(edu.school),
+    major: asText(edu.major),
+    degree: asText(edu.degree),
+    time: asText(edu.time),
+  })),
+);
 </script>
 
 <template>
   <div class="executive-template">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="avatar">{{ data.name ? data.name.charAt(0) : '?' }}</div>
+    <aside v-if="hasSidebar" class="sidebar">
+      <div v-if="data.name || data.title" class="sidebar-header">
+        <div v-if="data.name" class="avatar">{{ data.name.charAt(0) }}</div>
         <h1 v-if="data.name">{{ data.name }}</h1>
         <div v-if="data.title" class="title">{{ data.title }}</div>
       </div>
 
       <div
-        v-if="data.phone || data.email || data.github || data.website"
+        v-if="hasContactInfo(data)"
         class="sidebar-section"
       >
         <div class="sidebar-title">联系方式</div>
@@ -30,26 +55,24 @@ defineProps<{
       </div>
 
       <div
-        v-if="data.jobIntention || data.salary || data.experienceYears || data.age"
+        v-if="data.jobIntention || data.salary"
         class="sidebar-intention"
       >
         <div class="sidebar-title">求职意向</div>
         <span v-if="data.jobIntention" class="badge">{{ data.jobIntention }}</span>
         <span v-if="data.salary" class="badge">{{ data.salary }}</span>
-        <span v-if="data.experienceYears" class="badge">{{ data.experienceYears }}经验</span>
-        <span v-if="data.age" class="badge">{{ data.age }}</span>
       </div>
 
-      <div v-if="data.skills.length" class="sidebar-section">
+      <div v-if="sectionHasContent(data, 'skills')" class="sidebar-section">
         <div class="sidebar-title">专业技能</div>
         <SkillList :skills="data.skills" variant="list" />
       </div>
 
-      <div v-if="data.education.length" class="sidebar-section">
+      <div v-if="sectionHasContent(data, 'education')" class="sidebar-section">
         <div class="sidebar-title">教育背景</div>
-        <div v-for="edu in data.education" :key="edu.id" class="sidebar-edu">
-          <div class="sidebar-edu-school">{{ edu.school }}</div>
-          <div class="sidebar-edu-detail">
+        <div v-for="edu in educationList" :key="edu.id" class="sidebar-edu">
+          <div v-if="edu.school" class="sidebar-edu-school">{{ edu.school }}</div>
+          <div v-if="edu.major || edu.degree" class="sidebar-edu-detail">
             <span v-if="edu.major">{{ edu.major }}</span>
             <span v-if="edu.major && edu.degree"> | </span>
             <span v-if="edu.degree">{{ edu.degree }}</span>
@@ -60,23 +83,23 @@ defineProps<{
     </aside>
 
     <main class="template-main">
-      <section v-if="data.summary" class="section">
+      <section v-if="sectionHasContent(data, 'summary')" class="section">
         <h2 class="section-title">专业概述</h2>
         <p class="summary-text">{{ data.summary }}</p>
       </section>
 
-      <section v-if="data.experience.length" class="section">
+      <section v-if="sectionHasContent(data, 'experience')" class="section">
         <h2 class="section-title">工作经历</h2>
         <ExperienceItem :items="data.experience" />
       </section>
 
-      <section v-if="data.projects.length" class="section">
+      <section v-if="sectionHasContent(data, 'projects')" class="section">
         <h2 class="section-title">项目经历</h2>
         <ProjectItem :items="data.projects" />
       </section>
 
       <section
-        v-if="data.evaluation.some(e => e.text.trim())"
+        v-if="sectionHasContent(data, 'evaluation')"
         class="section"
       >
         <h2 class="section-title">自我评价</h2>
