@@ -22,4 +22,12 @@
 4. 禁止修改 `resume-builder/` 和 `docs/superpowers/`
 5. 分层依赖：`types → utils → stores → composables → components → App`，禁止逆向
 
+## Git 规则
+
+- **没有收到明确指令（提交 / push / 开 PR）时，不执行任何 git 写操作**
+- 提交前先 `git status` + `git diff` 确认范围；禁止 `git add -A` / `git add .`，按路径精确暂存
+- message 用 Conventional Commits：`<type>(<scope>): <subject>`，body 写"为什么"而非"做了什么"
+- 禁止 force push、改 git config、`--no-verify`、直接推 main
+- 详细手册见 [`.github/GIT_AGENT.md`](./GIT_AGENT.md)
+
 完整规范见 [`AGENTS.md`](../../AGENTS.md)。
