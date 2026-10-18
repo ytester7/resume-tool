@@ -1,7 +1,12 @@
 # CLAUDE.md
 
-> 本项目的 AI 编码约束统一定义在 [AGENTS.md](./AGENTS.md) 中。
-> 在进行任何代码修改前，请先阅读 AGENTS.md。
+@AGENTS.md
+
+> 上一行是 Claude Code 的导入语法，启动时会**自动展开 AGENTS.md 全文**（skills 索引、Git 工作流、验证命令），
+> 不是超链接、不需要手动打开。下面保留的是 Claude 侧最常用的速查，冲突时以 AGENTS.md 为准。
+>
+> 其它工具的自动加载点是：Cursor `.cursor/rules/project.mdc`（alwaysApply）、
+> Copilot `.github/copilot-instructions.md`、Codex/通用 `AGENTS.md`。Git 详版手册：`.github/GIT_AGENT.md`。
 
 ## 快速要点
 

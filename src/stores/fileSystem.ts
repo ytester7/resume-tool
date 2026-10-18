@@ -181,6 +181,40 @@ export const useFileSystemStore = defineStore('fileSystem', () => {
     });
   }
 
+  async function pickResumeFile(): Promise<{ file: File; handle: FileSystemFileHandle | null } | null> {
+    const types = [{
+      description: '简历文件',
+      accept: {
+        'application/json': ['.json'],
+        'application/pdf': ['.pdf'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+        'text/plain': ['.txt', '.md'],
+      },
+    }];
+
+    if (isSupported.value && window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({ types });
+        const file = await handle.getFile();
+        return { file, handle };
+      } catch (e) {
+        if (isAbortError(e)) return null;
+        throw new PermissionError('选择文件失败: ' + toErrorMessage(e));
+      }
+    }
+
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,.pdf,.docx,.txt,.md';
+      input.onchange = () => {
+        const file = input.files?.[0];
+        resolve(file ? { file, handle: null } : null);
+      };
+      input.click();
+    });
+  }
+
   async function pickSaveFile(suggestedName: string): Promise<FileSystemFileHandle | null> {
     if (!isSupported.value || !window.showSaveFilePicker) return null;
     try {
@@ -216,14 +250,18 @@ export const useFileSystemStore = defineStore('fileSystem', () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    // Firefox 在 click 后立刻 revoke 可能取消下载，延迟释放
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return {
     dirHandle, isSupported,
     verifyPermission, persistDirectoryHandle, restoreDirectoryHandle,
     pickDirectory, scanDirectory, readFileByName,
-    pickOpenFile, pickSaveFile, writeToFile, downloadAsBlob,
+    pickOpenFile, pickResumeFile, pickSaveFile, writeToFile, downloadAsBlob,
   };
 });

@@ -46,9 +46,17 @@ npx eslint src/ e2e/
 npm run build
 ```
 
+## Git 规则
+
+- **没有收到明确指令（提交 / push / 开 PR）时，不执行任何 git 写操作**
+- 提交前先 `git status` + `git diff` 确认范围；禁止 `git add -A` / `git add .`，按路径精确暂存
+- message 用 Conventional Commits：`<type>(<scope>): <subject>`，body 写"为什么"而非"做了什么"
+- 禁止 force push、改 git config、`--no-verify`、直接推 main
+- 详细手册：`.github/GIT_AGENT.md`
+
 ## 禁止事项
 
 1. 禁止修改 `resume-builder/` 和 `docs/superpowers/`
 2. 禁止删除已有测试来让构建通过
 3. 禁止在模板中用裸函数 `() => import(...)` 作为异步组件
-4. Commit 用 Conventional Commits（feat/fix/test/docs/refactor/chore）
+4. 提交前必须通过类型检查、单元测试、Lint 与构建（见上方验证命令）

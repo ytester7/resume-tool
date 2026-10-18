@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { flushPromises } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import PreviewPanel from './PreviewPanel.vue';
@@ -41,6 +41,87 @@ describe('PreviewPanel', () => {
     tabs.open({ title: 'A', data: { ...defaultResumeData(), name: '张三' } });
     const wrapper = mount(PreviewPanel);
     expect(wrapper.find('.preview-canvas').attributes('style')).toBeUndefined();
+  });
+});
+
+describe('PreviewPanel 模块显隐', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  function openWithSections() {
+    const tabs = useTabsStore();
+    tabs.open({
+      title: 'A',
+      data: {
+        ...defaultResumeData(),
+        name: '张三',
+        experience: [{
+          id: 'e1', company: '某公司', role: '测试', time: '2024',
+          description: '', achievement: '', items: ['一条工作内容'],
+        }],
+        projects: [{
+          id: 'p1', name: '某项目', time: '2024', role: 'r',
+          background: '', subtitle: '', achievement: '', items: ['一条项目内容'],
+        }],
+      },
+    });
+    return tabs;
+  }
+
+  /** 模板是 defineAsyncComponent 懒加载的，等它真正渲染出内容 */
+  async function waitForTemplate(wrapper: VueWrapper) {
+    await vi.waitFor(() => {
+      expect(wrapper.find('.preview-canvas .resume').exists()).toBe(true);
+    });
+    await flushPromises();
+  }
+
+  it('默认渲染所有有内容的模块', async () => {
+    openWithSections();
+    const wrapper = mount(PreviewPanel);
+    await waitForTemplate(wrapper);
+
+    const text = wrapper.text();
+    expect(text).toContain('工作经历');
+    expect(text).toContain('项目经历');
+  });
+
+  it('隐藏后该模块从预览中消失，其余模块保留', async () => {
+    const tabs = openWithSections();
+    tabs.setSectionHidden('projects', true);
+
+    const wrapper = mount(PreviewPanel);
+    await waitForTemplate(wrapper);
+
+    const text = wrapper.text();
+    expect(text).toContain('工作经历');
+    expect(text).not.toContain('项目经历');
+  });
+
+  it('重新显示后模块回到预览', async () => {
+    const tabs = openWithSections();
+    tabs.setSectionHidden('projects', true);
+    tabs.setSectionHidden('projects', false);
+
+    const wrapper = mount(PreviewPanel);
+    await waitForTemplate(wrapper);
+
+    expect(wrapper.text()).toContain('项目经历');
+  });
+
+  it('隐藏专业概述后不渲染概述文本', async () => {
+    const tabs = useTabsStore();
+    tabs.open({
+      title: 'A',
+      data: { ...defaultResumeData(), name: '张三', summary: '这是概述正文' },
+    });
+    tabs.setSectionHidden('summary', true);
+
+    const wrapper = mount(PreviewPanel);
+    await waitForTemplate(wrapper);
+
+    expect(wrapper.text()).not.toContain('这是概述正文');
   });
 });
 

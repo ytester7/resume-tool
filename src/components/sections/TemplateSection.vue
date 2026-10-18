@@ -4,6 +4,7 @@ import { useTabsStore } from '@/stores/tabs';
 import { TEMPLATE_LIST } from '@/types/resume';
 import type { TemplateName } from '@/types/resume';
 import { COLOR_PRESETS, FONT_PRESETS } from '@/utils/theme';
+import { templateThumb } from '@/data/templateThumbs';
 
 const tabs = useTabsStore();
 
@@ -49,10 +50,22 @@ const categories = [
           v-for="tpl in TEMPLATE_LIST.filter(t => t.category === cat.key)"
           :key="tpl.name"
           :class="['template-card', { active: currentTemplate === tpl.name }]"
+          :aria-pressed="currentTemplate === tpl.name"
           @click="select(tpl.name)"
         >
-          <span class="template-name">{{ tpl.displayName }}</span>
-          <span v-if="!tpl.sectionOrderMutable" class="template-tag">固定布局</span>
+          <span class="thumb">
+            <img
+              v-if="templateThumb(tpl.name)"
+              :src="templateThumb(tpl.name)"
+              :alt="`${tpl.displayName}模板预览`"
+              loading="lazy"
+            />
+            <span v-else class="thumb-fallback">{{ tpl.displayName.charAt(0) }}</span>
+          </span>
+          <span class="template-meta">
+            <span class="template-name">{{ tpl.displayName }}</span>
+            <span class="template-tag">{{ tpl.sectionOrderMutable ? '可调顺序' : '固定布局' }}</span>
+          </span>
         </button>
       </div>
     </div>
@@ -94,17 +107,29 @@ const categories = [
 <style scoped>
 .template-category { margin-bottom: 14px; }
 .cat-title { margin: 0 0 6px; font-size: 12px; color: #666; font-weight: 500; }
-.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+.template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .template-card {
-  padding: 8px 10px; border: 1px solid #d9d9d9; border-radius: 4px;
+  padding: 6px; border: 1px solid #e0e0e0; border-radius: 6px;
   background: #fff; cursor: pointer; font-size: 12px;
-  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  display: flex; flex-direction: column; gap: 6px; align-items: stretch;
   transition: all 0.2s;
 }
-.template-card:hover { border-color: #1890ff; }
-.template-card.active { border-color: #1890ff; background: #e6f7ff; color: #1890ff; }
-.template-name { font-weight: 500; }
-.template-tag { font-size: 10px; color: #999; }
+.template-card:hover { border-color: #1890ff; box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15); }
+.template-card.active { border-color: #1890ff; background: #f0f8ff; }
+.thumb {
+  display: block; width: 100%; aspect-ratio: 4 / 5; overflow: hidden;
+  border-radius: 3px; background: #f5f5f5;
+  border: 1px solid #f0f0f0;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+.thumb-fallback {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; color: #bbb; font-size: 20px;
+}
+.template-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.template-name { font-weight: 500; color: #333; font-size: 12px; }
+.template-tag { font-size: 9px; color: #999; white-space: nowrap; }
+.template-card.active .template-name { color: #1890ff; }
 
 .theme-row {
   display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
@@ -131,4 +156,10 @@ const categories = [
   border-radius: 4px; font-size: 12px; color: #666; cursor: pointer;
 }
 .reset-theme:hover { border-color: #ff4d4f; color: #ff4d4f; }
+
+/* 窄屏：模板卡片略小 */
+@media (max-width: 767px) {
+  .template-grid { gap: 6px; }
+  .template-tag { display: none; }
+}
 </style>

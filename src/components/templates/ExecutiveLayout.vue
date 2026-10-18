@@ -16,7 +16,10 @@ defineProps<{
   <div class="executive-template">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="avatar">{{ data.name ? data.name.charAt(0) : '?' }}</div>
+        <div class="avatar">
+          <img v-if="data.photo" :src="data.photo" alt="" />
+          <template v-else>{{ data.name ? data.name.charAt(0) : '?' }}</template>
+        </div>
         <h1 v-if="data.name">{{ data.name }}</h1>
         <div v-if="data.title" class="title">{{ data.title }}</div>
       </div>
@@ -132,6 +135,13 @@ defineProps<{
   font-weight: 700;
   margin: 0 auto 12px;
   font-family: var(--font-family, "Noto Serif SC", Georgia, serif);
+  overflow: hidden;
+}
+.sidebar-header .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .sidebar-header h1 {
   margin: 0 0 6px;
@@ -212,4 +222,26 @@ defineProps<{
 .sidebar :deep(.skill-category) { color: var(--c-primary, #c9a96e); }
 .sidebar :deep(.skill-items) { color: var(--c-text-muted, #d0d0d0); }
 .sidebar :deep(.skill-level) { color: var(--c-primary, #c9a96e); }
+
+/* 侧栏只有 220px：技能行改为上下结构，避免长技能列表被挤成竖排 */
+.sidebar :deep(.skills-list) { gap: 10px; }
+.sidebar :deep(.skill-row) {
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.sidebar :deep(.skill-category) {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.sidebar :deep(.skill-items) {
+  font-size: 10.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.sidebar :deep(.skill-level) {
+  font-size: 10px;
+  line-height: 1.4;
+}
 </style>

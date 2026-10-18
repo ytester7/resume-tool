@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import DraggableList from '@/components/DraggableList.vue';
+import AutoTextarea from '@/components/AutoTextarea.vue';
 import AppIcon from '@/components/AppIcon.vue';
 import type { Skill, SkillLevel } from '@/types/resume';
 
@@ -40,15 +41,9 @@ function add() {
             :value="element.category"
             placeholder="技能分类（如：自动化测试）"
             class="skill-cat-input"
+            :title="element.category"
             :aria-label="`技能 ${index + 1} 分类`"
             @input="updateSkill(index, { category: ($event.target as HTMLInputElement).value })"
-          />
-          <input
-            :value="element.items"
-            placeholder="具体技能（如：Selenium, Playwright）"
-            class="skill-items-input"
-            :aria-label="`技能 ${index + 1} 具体内容`"
-            @input="updateSkill(index, { items: ($event.target as HTMLInputElement).value })"
           />
           <select
             :value="element.level"
@@ -58,6 +53,13 @@ function add() {
           >
             <option v-for="lvl in LEVELS" :key="lvl" :value="lvl">{{ lvl }}</option>
           </select>
+          <AutoTextarea
+            class="skill-items-input"
+            :model-value="element.items"
+            placeholder="具体技能（如：Selenium、Playwright、pytest）"
+            :aria-label="`技能 ${index + 1} 具体内容`"
+            @update:model-value="updateSkill(index, { items: $event })"
+          />
           <button class="remove-btn" title="删除" :aria-label="`删除技能 ${element.category || index + 1}`" @click="remove(index)"><AppIcon name="trash" /></button>
         </div>
       </template>
@@ -70,9 +72,21 @@ function add() {
 
 <style scoped>
 .skill-edit-row {
-  display: grid; grid-template-columns: 24px 1fr 2fr 70px 32px;
-  gap: 6px; align-items: center; margin-bottom: 6px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 74px 28px;
+  grid-template-areas:
+    "drag cat   lvl   del"
+    "drag items items del";
+  gap: 6px 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }
+.skill-edit-row .drag-handle { grid-area: drag; }
+.skill-cat-input { grid-area: cat; }
+.skill-level-select { grid-area: lvl; }
+.skill-items-input { grid-area: items; }
+.remove-btn { grid-area: del; align-self: start; }
+
 .skill-edit-row input,
 .skill-level-select {
   padding: 5px 8px; border: 1px solid #d9d9d9; border-radius: 4px;

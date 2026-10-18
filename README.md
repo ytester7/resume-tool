@@ -1,31 +1,43 @@
 # resume-tool · 简历制作工具
 
-> 一个基于 Vue 3 + TypeScript 的本地优先简历编辑器：13 套模板、三级拖拽排序、多 Tab 会话、实时预览，支持 `file://` 双击打开与 PDF 导出。
+> 一个本地优先的 Vue 3 简历工作台：旧简历导入（PDF / Word / JSON）、欢迎页示例、13 套模板缩略图、A4 分页预览、可选中文字的 PDF、Word 导出、撤销重做、岗位 JD 匹配。所有数据只留在浏览器和本地文件里。
 
-<!-- 在此添加截图 -->
-<!-- 建议放置一张编辑器 + 预览面板的主界面截图，可使用 ![](docs/screenshot-main.png) 语法 -->
+![欢迎页](docs/screenshots/welcome.png)
+
+![编辑器与 A4 预览](docs/screenshots/editor.png)
+
+![导入确认](docs/screenshots/import-dialog.png)
 
 ## 在线演示
 
-<!-- 在此添加在线演示链接 -->
-<!-- 若部署了在线 demo，可在此填写链接：在线 Demo：<https://your-demo-url> -->
+仓库自带 GitHub Pages 部署流程（`.github/workflows/deploy.yml`）。推送到 `main` 后，在仓库 Settings → Pages 中选择 **GitHub Actions**，即可获得在线地址：
 
-当前版本支持本地直接使用：下载 Release 构建产物，解压后双击 `index.html` 即可在浏览器中打开（基于 `base: './'` 的 `file://` 部署）。
+```
+https://<你的用户名>.github.io/resume-tool/
+```
+
+也可以本地直接使用：下载 Release 构建产物，解压后双击 `index.html`（基于 `base: './'` 的 `file://` 部署）。
 
 ## 功能特性
 
 | # | 功能 | 说明 |
 |---|------|------|
-| 1 | 13 套简历模板 | Classic / Minimal / Gradient / Creative / DataDriven / QaPro / CardStyle / ChineseElegant（8 套单列可变序）+ Modern / Executive / European / Tech / TechGradient（5 套固定布局） |
-| 2 | 三级拖拽排序 | 区块级（整体顺序）+ 列表项级（技能/经历/教育排序）+ 子项级（工作内容条目独立排序） |
-| 3 | 多 Tab 会话管理 | 类 IDE 多 Tab 编辑，每个 Tab 独立简历数据 + 模板 + sectionOrder，dirty 标记 + 关闭确认 |
-| 4 | 实时预览 | 编辑器与预览面板完全解耦，所见即所得 |
-| 5 | localStorage 自动兜底 + 启动恢复 | 编辑自动存 localStorage，崩溃/刷新后启动时弹窗恢复"孤儿 Tab" |
-| 6 | File System Access API + 降级方案 | 现代浏览器原生文件读写，不支持时降级到 `input[type=file]` + Blob 下载 |
-| 7 | 键盘快捷键 | Ctrl+S 保存 / Ctrl+O 打开 / Ctrl+P 导出 PDF / Ctrl+Shift+N 新建 / Ctrl+Shift+S 另存为 / `[` `]` 切换模板 |
-| 8 | PDF 导出 | 基于 html2pdf.js 的 A4 高清导出 |
-| 9 | `file://` 部署支持 | `base: './'` 构建产物可双击 `index.html` 直接打开 |
-| 10 | 旧版 JSON 兼容 | 向后兼容无 `_meta` 的旧格式文件 |
+| 1 | 旧简历导入 | PDF / Word（.docx）/ JSON / TXT，本地抽取文本 + 规则解析，导入前弹窗确认识别结果；支持把文件直接拖进页面 |
+| 2 | 欢迎页 + 三套示例 | 测试 / 后端 / 产品三个方向，点一下就能看到填满后的效果，30 秒完成 0→1 |
+| 3 | 13 套模板 + 缩略图 | 8 套单列可变序 + 5 套固定布局，模板卡片直接显示真实排版缩略图 |
+| 4 | A4 分页预览 | 210mm 页宽 + 297mm 分页线 + 实时页数，超过 2 页会提示精简 |
+| 5 | 可选中文字的 PDF | 浏览器打印通道输出矢量文字，ATS 可解析；html2pdf 作为兼容模式保留 |
+| 6 | Word（.docx）导出 | 单栏、可编辑，适配国内投递系统 |
+| 7 | 岗位 JD 匹配 | 粘贴 JD，本地抽取关键词并计算覆盖率，列出「JD 提到但简历没写」的技能 |
+| 8 | 简历健康度 | 5 维 100 分 + 可点击定位的改进建议 |
+| 9 | 撤销 / 重做 | 每个 Tab 独立快照栈（最多 40 步），Ctrl+Z / Ctrl+Shift+Z |
+| 10 | 多 Tab 会话 | 类 IDE 多 Tab，标题跟随姓名，重复打开同一文件会自动切换 |
+| 11 | 三级拖拽排序 | 区块级 + 列表项级 + 工作内容子项级 |
+| 12 | 证件照 | 上传后自动按 3:4 居中裁剪压缩，Executive / QA专业 / 科技渐变 三套模板已支持 |
+| 13 | 自动保存 + 崩溃恢复 | localStorage 兜底，刷新/崩溃后启动时恢复「孤儿 Tab」 |
+| 14 | 本地优先 | 业务代码零网络请求；导入解析、JD 匹配与健康度全部本地计算 |
+| 15 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
+| 16 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |
 
 ## 技术栈
 
@@ -33,185 +45,152 @@
 |------|------|
 | 框架 | Vue 3（Composition API + `<script setup>`） |
 | 语言 | TypeScript（strict 模式） |
-| 构建工具 | Vite 5 |
-| 状态管理 | Pinia |
+| 构建 | Vite 5 |
+| 状态 | Pinia |
 | 拖拽 | vuedraggable |
-| 单元测试 | Vitest + @vue/test-utils + jsdom |
-| E2E 测试 | Playwright |
-| PDF 导出 | html2pdf.js |
-| 代码质量 | vue-tsc 类型检查 |
+| 导入 | pdfjs-dist（PDF 文本层）、mammoth（Word） |
+| 导出 | 浏览器打印（文本 PDF）、html2pdf.js（图片 PDF）、docx（Word） |
+| 测试 | Vitest + @vue/test-utils + jsdom、Playwright |
+| 质量 | vue-tsc、ESLint、GitHub Actions |
 
 ## 快速开始
 
 ### 环境要求
 
 - **Node.js** ≥ 18
-- **npm** ≥ 9（或 pnpm / yarn 等效包管理器）
-- 现代浏览器（推荐 Chrome 86+，详见[浏览器兼容性](#浏览器兼容性)）
+- **npm** ≥ 9（或 pnpm / yarn）
+- 现代浏览器（推荐 Chrome / Edge 86+）
 
 ### 安装与运行
 
 ```bash
-# 1. 克隆仓库
 git clone <repo-url>
 cd resume-tool
-
-# 2. 安装依赖
 npm install
 
-# 3. 启动开发服务器
-npm run dev
-
-# 4. 构建生产版本
-npm run build
-
-# 5. 本地预览构建产物
-npm run preview
+npm run dev       # 开发服务器 http://localhost:5173
+npm run build     # 类型检查 + 生产构建
+npm run preview   # 预览构建产物
 ```
 
-开发服务器默认运行在 `http://localhost:5173`。
+### 常用脚本
+
+| 命令 | 作用 |
+|------|------|
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | `vue-tsc --noEmit` + `vite build` |
+| `npm test` | 单元测试（Vitest） |
+| `npm run test:coverage` | 覆盖率报告 |
+| `npm run e2e` | Playwright E2E |
+| `npm run lint` | ESLint |
+| `npm run thumbs` | 重新生成模板缩略图（改了模板样式后执行） |
 
 ## 使用说明
 
-### 新建简历
+### 导入旧简历
 
-- 点击工具栏"新建"按钮，或使用快捷键 `Ctrl+Shift+N` 创建一个新的空白 Tab。
-- 每个 Tab 拥有独立的简历数据、模板选择与区块顺序。
+工具栏「导入」或欢迎页「导入 PDF / Word」支持：
+
+| 格式 | 说明 |
+|------|------|
+| PDF | 读取文本层，扫描件/图片型 PDF 会明确提示不支持 |
+| Word（.docx） | mammoth 抽取段落，复杂表格会退化为文本 |
+| JSON | 本工具导出的文件，直接还原模板与主题 |
+| TXT / MD | 粘贴或导出成纯文本的简历，走同一套规则解析 |
+
+导入后会先弹出确认页，展示姓名、岗位、联系方式、各区块数量、识别完整度与警告，并附原文预览。确认后进入普通编辑模式，所有字段都可以继续修改。
+
+> 解析是本地规则（不用 AI）：能识别常见中文简历的标题、日期区间、公司/职位、项目与教育，但不保证 100% 准确；识别不到的字段会留空并给出提示。
+
+### 从示例开始
+
+首次打开会进入欢迎页：可以新建空白简历、导入旧简历，或直接选择一套示例（测试 / 后端 / 产品）。示例是虚构人物，替换内容即可。
 
 ### 选择模板
 
-- 在编辑面板顶部的模板区块中选择模板。
-- 使用快捷键 `[` / `]` 在模板列表中向前 / 向后切换。
-- 单列可变序模板（8 套）支持区块顺序自定义；固定布局模板（5 套）使用预设布局。
+编辑面板中的模板卡片带有真实缩略图，按「经典稳重 / 现代简约 / 专业测试 / 创意活力」分组；`[` / `]` 可快速切换。8 套单列模板支持调整区块顺序，5 套固定布局使用预设版式。
 
-### 编辑内容
+### 导出
 
-- 在左侧编辑面板按区块填写：基本信息、技能、工作经历、项目经历、教育经历、自我评价、个人总结等。
-- 编辑内容会实时同步到右侧预览面板。
+工具栏「导出 PDF」提供三条通道：
 
-### 拖拽排序
+1. **打印 / 另存为 PDF（推荐）**：在打印窗口选择「另存为 PDF」，得到可选中、可复制、ATS 可解析的文本 PDF；
+2. **Word 文档（.docx）**：单栏可编辑版本，适合国内投递系统；
+3. **图片 PDF（兼容模式）**：html2pdf 光栅化，复杂样式还原度最高，但文字不可选中。
 
-- **区块级**：在编辑面板的"区块顺序"区域拖动调整整体顺序（仅单列可变序模板生效）。
-- **列表项级**：在技能 / 工作经历 / 教育经历等列表中拖动调整条目顺序。
-- **子项级**：工作经历下的"工作内容"条目可独立排序。
+### 岗位匹配
 
-### 保存与导出
+在「岗位匹配」卡片粘贴 JD → 点击「分析匹配度」，会得到关键词覆盖率、已覆盖项和缺失项。分析完全在浏览器本地完成，不会上传 JD 或简历。
 
-- **保存**：`Ctrl+S` 写回当前打开的文件（首次保存或另存时使用 `Ctrl+Shift+S`）。
-- **打开**：`Ctrl+O` 打开本地 `.json` 简历文件。
-- **导出 PDF**：`Ctrl+P` 调用 html2pdf.js 生成 A4 高清 PDF。
-- 编辑过程会自动写入 localStorage 兜底，浏览器崩溃或意外刷新后，下次启动会弹窗提示恢复"孤儿 Tab"。
-
-### 键盘快捷键
+### 快捷键
 
 | 快捷键 | 功能 |
 |--------|------|
 | `Ctrl + S` | 保存当前简历 |
 | `Ctrl + Shift + S` | 另存为 |
-| `Ctrl + O` | 打开 JSON 文件 |
-| `Ctrl + P` | 导出 PDF |
+| `Ctrl + O` | 导入 PDF / Word / JSON |
+| `Ctrl + P` | 打印 / 另存为 PDF |
 | `Ctrl + Shift + N` | 新建简历 Tab |
-| `[` | 切换到上一个模板 |
-| `]` | 切换到下一个模板 |
+| `Ctrl + Z` / `Ctrl + Shift + Z` | 撤销 / 重做（输入框内保留浏览器原生撤销） |
+| `[` / `]` | 上一个 / 下一个模板 |
 
 ## 项目结构
 
 ```
-resume-tool/
-├── src/
-│   ├── components/
-│   │   ├── sections/          # 8 个编辑区块组件
-│   │   │   ├── BasicInfoSection.vue
-│   │   │   ├── EducationSection.vue
-│   │   │   ├── EvaluationSection.vue
-│   │   │   ├── ExperienceSection.vue
-│   │   │   ├── ProjectsSection.vue
-│   │   │   ├── SkillsSection.vue
-│   │   │   ├── SummarySection.vue
-│   │   │   └── TemplateSection.vue
-│   │   ├── templates/         # 13 个模板 + 6 个共享子组件
-│   │   │   ├── shared/        # ContactItems / SkillList / ExperienceItem / ProjectItem / EducationItem / EvaluationList
-│   │   │   ├── ClassicLayout.vue … TechGradientLayout.vue
-│   │   ├── EditorPanel.vue    # 编辑面板
-│   │   ├── PreviewPanel.vue   # 预览面板（异步加载模板）
-│   │   ├── TabBar.vue         # 多 Tab 管理
-│   │   ├── Toolbar.vue        # 顶部工具栏
-│   │   ├── DraggableList.vue  # 通用拖拽列表
-│   │   ├── ConfirmDialog.vue  # 确认对话框
-│   │   ├── Toast.vue          # 通知组件
-│   │   └── AppIcon.vue        # 图标组件
-│   ├── composables/           # 6 个组合式函数
-│   │   ├── useAutoSave.ts            # 自动保存到 localStorage
-│   │   ├── useConfirm.ts             # 确认对话框
-│   │   ├── useKeyboardShortcuts.ts   # 全局快捷键
-│   │   ├── usePdfExport.ts           # PDF 导出
-│   │   ├── useSectionOrder.ts        # 区块顺序管理
-│   │   └── useStartupRecovery.ts     # 启动恢复孤儿 Tab
-│   ├── stores/                # 3 个 Pinia store
-│   │   ├── fileSystem.ts      # 文件读写（File System Access API + 降级）
-│   │   ├── tabs.ts            # 多 Tab 会话管理
-│   │   └── ui.ts              # UI 状态（toast / confirm）
-│   ├── types/
-│   │   └── resume.ts          # 简历类型定义
-│   ├── utils/                 # 工具函数（解析 / 序列化 / 校验 / 错误 / 图标 / sanitize）
-│   └── styles/
-│       └── main.css           # 全局样式
-├── e2e/                       # Playwright E2E 测试
-│   ├── smoke.spec.ts
-│   ├── drag-sort.spec.ts
-│   └── multi-tab.spec.ts
-├── index.html
-├── vite.config.ts
-├── vitest.config.ts
-├── playwright.config.ts
-├── tsconfig.json
-└── package.json
+src/
+├── components/
+│   ├── sections/          # 编辑区块（含模板选择、岗位匹配、照片上传）
+│   ├── templates/         # 13 个模板 + 6 个共享子组件
+│   ├── WelcomePanel.vue   # 欢迎页
+│   ├── ImportDialog.vue   # 导入确认弹窗
+│   ├── EditorPanel.vue    # 编辑面板（健康度 + 区块顺序）
+│   ├── PreviewPanel.vue   # A4 分页预览
+│   ├── Toolbar.vue        # 工具栏与导出菜单
+│   ├── TabBar.vue         # 多 Tab
+│   └── ...
+├── composables/           # autoSave / undoHistory / printExport / pdfExport / docxExport / sectionOrder / shortcuts / startupRecovery
+├── stores/                # tabs / fileSystem / ui
+├── data/                  # 示例简历、模板缩略图映射
+├── utils/                 # importFile / importText / extractPdf / extractDocx / parseResume / jdMatch / healthScore / page / image / docxExport / theme / errors
+├── assets/template-thumbs # 13 张模板缩略图（npm run thumbs 生成）
+└── styles/                # main.css + print.css
+e2e/                       # Playwright：smoke / drag-sort / multi-tab / features / import
+scripts/                   # 开发脚本（模板缩略图生成）
 ```
 
 ## 测试
 
-本项目重视测试稳定性，单元测试与 E2E 测试全绿。
-
 ```bash
-# 单元测试（Vitest，单次运行）
-npm run test
-
-# 单元测试（watch 模式）
-npm run test:watch
-
-# 单元测试覆盖率
+npm test            # 单元测试
 npm run test:coverage
-
-# E2E 测试（Playwright，首次运行会自动安装浏览器）
-npx playwright install
-npm run e2e
+npm run e2e         # 首次需 npx playwright install
 ```
 
-测试概览：
-
-| 类别 | 数量 |
-|------|------|
-| 单元测试文件 | 23 个 |
-| 单元测试用例 | 181 个 |
-| E2E 测试用例 | 10 个 |
-| 测试覆盖率 | ~85% |
+当前基线：**41 个单元测试文件 / 360 个用例**，**20 条 E2E**，覆盖导入解析（PDF / Word / 文本）、健康度、JD 匹配、撤销栈、A4 分页、模板渲染、导出流程。
 
 ## 浏览器兼容性
 
 | 浏览器 | 支持情况 |
 |--------|----------|
-| Chrome / Edge ≥ 86 | ✅ 完整支持（File System Access API 原生读写） |
-| Firefox / Safari 现代版本 | ⚠️ 降级方案（`input[type=file]` 打开 + Blob 下载保存） |
-| 所有现代浏览器 | ✅ 编辑 / 预览 / 拖拽 / PDF 导出 / localStorage 兜底均可用 |
+| Chrome / Edge ≥ 86 | ✅ 完整支持（原生文件读写、PDF/Word 导入、打印 PDF、Word 导出） |
+| Firefox / Safari 现代版本 | ✅ 编辑 / 预览 / 打印 PDF / Word / 导入 / 撤销可用；保存自动降级为下载 JSON |
+| 所有现代浏览器 | ✅ 编辑、预览、拖拽、localStorage 兜底可用 |
 
-> 在不支持 File System Access API 的浏览器中，"保存"会降级为下载文件，"另存为"始终走下载流程。
+> 打印 PDF 依赖浏览器打印对话框；不同浏览器的分页结果可能略有差异，建议用 Chrome / Edge 导出最终版。
+> PDF / Word 导入在浏览器本地完成：PDF 使用 pdf.js worker，首次导入会加载约 1.4MB 的 worker 文件（之后走缓存）。
+> 通过 `file://` 双击打开时，部分浏览器会限制 Web Worker，PDF 导入可能不可用；建议用 `npm run dev`、`npm run preview` 或在线版本导入 PDF / Word。
+
+## 数据与隐私
+
+- 简历内容只写入你选择的本地文件和浏览器 localStorage，不上传服务器；
+- PDF / Word 导入在浏览器本地解析，文件不会离开设备；
+- 岗位匹配使用内置技能词典在本地计算，不调用任何 AI 接口；
+- 仓库通过 `.gitignore` 排除了 `my-resume/`、`resume-docs/`，避免个人简历被误提交。
 
 ## 许可证
 
 [MIT License](./LICENSE)
 
-> 注：仓库尚未包含 `LICENSE` 文件，正式开源发布前请补充。
-
 ## 贡献指南
 
-欢迎提交 Issue 与 Pull Request。请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解开发环境、代码规范、测试要求与 PR 流程。
+欢迎提交 Issue 与 PR。开发环境、代码规范、测试要求与 PR 流程见 [CONTRIBUTING.md](./CONTRIBUTING.md)。

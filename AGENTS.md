@@ -35,7 +35,8 @@
 
 ## Git 工作流
 
-项目采用 **GitHub Flow**，完整规范见 [.github/GIT_WORKFLOW.md](./.github/GIT_WORKFLOW.md)。
+项目采用 **GitHub Flow**，完整规范见 [.github/GIT_WORKFLOW.md](./.github/GIT_WORKFLOW.md)；
+agent 的执行步骤与红线见 [.github/GIT_AGENT.md](./.github/GIT_AGENT.md)（动手前先读它）。
 以下是 agent 执行 git 操作时必须遵守的要点：
 
 ### 何时动手

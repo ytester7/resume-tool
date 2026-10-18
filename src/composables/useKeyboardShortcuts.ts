@@ -8,7 +8,12 @@ export interface ShortcutHandlers {
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
+  /** 打印 / 另存为 PDF（文本可选中） */
+  onPrintPdf: () => void;
+  /** 图片 PDF（兼容模式） */
   onExportPdf: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
@@ -24,36 +29,55 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
 
   function onKeydown(e: KeyboardEvent) {
     const ctrl = e.ctrlKey || e.metaKey;
+    const key = e.key.toLowerCase();
 
     // Ctrl+S 保存
-    if (ctrl && !e.shiftKey && e.key === 's') {
+    if (ctrl && !e.shiftKey && key === 's') {
       e.preventDefault();
       handlers.onSave();
       return;
     }
     // Ctrl+Shift+S 另存为
-    if (ctrl && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+    if (ctrl && e.shiftKey && key === 's') {
       e.preventDefault();
       handlers.onSaveAs();
       return;
     }
     // Ctrl+O 打开
-    if (ctrl && !e.shiftKey && e.key === 'o') {
+    if (ctrl && !e.shiftKey && key === 'o') {
       e.preventDefault();
       handlers.onOpen();
       return;
     }
-    // Ctrl+P 导出 PDF
-    if (ctrl && !e.shiftKey && e.key === 'p') {
+    // Ctrl+P 打印 / 另存为 PDF（浏览器原生打印，文字可选中）
+    if (ctrl && !e.shiftKey && key === 'p') {
       e.preventDefault();
-      handlers.onExportPdf();
+      handlers.onPrintPdf();
       return;
     }
     // Ctrl+Shift+N 新建
-    if (ctrl && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+    if (ctrl && e.shiftKey && key === 'n') {
       e.preventDefault();
       handlers.onNew();
       return;
+    }
+    // 撤销 / 重做：输入框内交给浏览器原生撤销，避免打断正常输入
+    if (ctrl && !isEditableTarget(e.target)) {
+      if (e.shiftKey && key === 'z') {
+        e.preventDefault();
+        handlers.onRedo();
+        return;
+      }
+      if (!e.shiftKey && key === 'z') {
+        e.preventDefault();
+        handlers.onUndo();
+        return;
+      }
+      if (!e.shiftKey && key === 'y') {
+        e.preventDefault();
+        handlers.onRedo();
+        return;
+      }
     }
 
     // [ ] 切换模板（仅在非编辑区生效）
