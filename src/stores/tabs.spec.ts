@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useTabsStore } from './tabs';
+import { defaultResumeData } from '@/types/resume';
 
 describe('useTabsStore', () => {
   beforeEach(() => {
@@ -220,5 +221,100 @@ describe('useTabsStore', () => {
     localStorage.setItem(`resume_tab_${s.id}`, 'dummy');
     tabs.close(s.id);
     expect(localStorage.getItem(`resume_tab_${s.id}`)).toBe(null);
+  });
+});
+
+describe('tabs - 模块显隐', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('新建简历时隐藏列表为空', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    expect(tabs.active?.hiddenSections).toEqual([]);
+  });
+
+  it('open 可透传 hiddenSections', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A', hiddenSections: ['projects'] });
+    expect(tabs.active?.hiddenSections).toEqual(['projects']);
+  });
+
+  it('setSectionHidden 隐藏 / 显示，并标记 dirty', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.markClean();
+
+    tabs.setSectionHidden('experience', true);
+    expect(tabs.active?.hiddenSections).toEqual(['experience']);
+    expect(tabs.active?.dirty).toBe(true);
+
+    tabs.markClean();
+    tabs.setSectionHidden('experience', false);
+    expect(tabs.active?.hiddenSections).toEqual([]);
+    expect(tabs.active?.dirty).toBe(true);
+  });
+
+  it('重复设置同一状态不产生重复项', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.setSectionHidden('skills', true);
+    tabs.setSectionHidden('skills', true);
+    expect(tabs.active?.hiddenSections).toEqual(['skills']);
+  });
+
+  it('toggleSectionHidden 在开与关之间切换', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.toggleSectionHidden('projects');
+    expect(tabs.active?.hiddenSections).toEqual(['projects']);
+    tabs.toggleSectionHidden('projects');
+    expect(tabs.active?.hiddenSections).toEqual([]);
+  });
+
+  it('隐藏只是不渲染，数据不会被删除', () => {
+    const tabs = useTabsStore();
+    tabs.open({
+      title: 'A',
+      data: {
+        ...defaultResumeData(),
+        projects: [{
+          id: 'p1', name: 'P', time: '2024', role: 'r',
+          background: 'b', subtitle: 's', achievement: 'a', items: ['i'],
+        }],
+      },
+    });
+    tabs.setSectionHidden('projects', true);
+    expect(tabs.active?.data.projects).toHaveLength(1);
+  });
+
+  it('showAllSections 一次性恢复全部模块', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.setSectionHidden('skills', true);
+    tabs.setSectionHidden('projects', true);
+    tabs.showAllSections();
+    expect(tabs.active?.hiddenSections).toEqual([]);
+  });
+
+  it('删除自定义区块时同步清理隐藏记录', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.addCustomSection();
+    const secId = tabs.active!.data.customSections[0].id;
+    tabs.setSectionHidden(`custom:${secId}`, true);
+    tabs.removeCustomSection(0);
+    expect(tabs.active?.hiddenSections).toEqual([]);
+  });
+
+  it('replaceActive 可回滚 hiddenSections（撤销用）', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.setSectionHidden('education', true);
+    // structuredClone 不接受响应式 Proxy，撤销场景里传的是 JSON.parse 出来的纯对象
+    const snapshot = JSON.parse(JSON.stringify(tabs.active!.data));
+    tabs.replaceActive({ data: snapshot, hiddenSections: [] });
+    expect(tabs.active?.hiddenSections).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useTabsStore } from '@/stores/tabs';
 import DraggableList from '@/components/DraggableList.vue';
+import AutoTextarea from '@/components/AutoTextarea.vue';
 import AppIcon from '@/components/AppIcon.vue';
 import type { Experience } from '@/types/resume';
 
@@ -47,12 +48,19 @@ function add() {
         <div class="exp-edit-card">
           <div class="exp-card-header">
             <span class="drag-handle" aria-label="拖拽以调整工作经历顺序" role="button"><AppIcon name="drag" /></span>
-            <input :value="element.company" placeholder="公司名称" class="exp-input" :aria-label="`工作经历 ${index + 1} 公司`" @input="updateField(index, 'company', ($event.target as HTMLInputElement).value)" />
-            <input :value="element.role" placeholder="职位" class="exp-input" :aria-label="`工作经历 ${index + 1} 职位`" @input="updateField(index, 'role', ($event.target as HTMLInputElement).value)" />
-            <input :value="element.time" placeholder="时间（如 2020.03-至今）" class="exp-input" :aria-label="`工作经历 ${index + 1} 时间`" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" />
+            <input :value="element.company" placeholder="公司名称" class="exp-input exp-company" :title="element.company" :aria-label="`工作经历 ${index + 1} 公司`" @input="updateField(index, 'company', ($event.target as HTMLInputElement).value)" />
+            <AutoTextarea class="exp-role" :model-value="element.role" placeholder="职位" :aria-label="`工作经历 ${index + 1} 职位`" @update:model-value="updateField(index, 'role', $event)" />
+            <input :value="element.time" placeholder="时间（如 2020.03-至今）" class="exp-input exp-time" :title="element.time" :aria-label="`工作经历 ${index + 1} 时间`" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" />
             <button class="remove-btn" title="删除" :aria-label="`删除工作经历 ${element.company || index + 1}`" @click="remove(index)"><AppIcon name="trash" /></button>
           </div>
-          <textarea :value="element.description" placeholder="工作描述" rows="2" class="exp-textarea" :aria-label="`工作经历 ${index + 1} 描述`" @input="updateField(index, 'description', ($event.target as HTMLTextAreaElement).value)" />
+          <AutoTextarea
+            class="exp-textarea"
+            :model-value="element.description"
+            placeholder="工作描述（一句话说明负责的业务与范围）"
+            :rows="2"
+            :aria-label="`工作经历 ${index + 1} 描述`"
+            @update:model-value="updateField(index, 'description', $event)"
+          />
           <div class="exp-items-block">
             <div class="exp-items-label">工作内容（拖拽排序）</div>
             <!-- DraggableList 的泛型约束 T extends {id:string}|string 导致 $event 推断为联合，
@@ -61,7 +69,13 @@ function add() {
               <template #item="{ element: line, index: lineIdx }">
                 <div class="exp-item-row">
                   <span class="drag-handle" aria-label="拖拽以调整工作内容顺序" role="button"><AppIcon name="drag" /></span>
-                  <input :value="line" placeholder="用 STAR 法则描述：行动+技术+量化" class="exp-item-input" :aria-label="`工作经历 ${index + 1} 第 ${lineIdx + 1} 条内容`" @input="updateItem(index, lineIdx, ($event.target as HTMLInputElement).value)" />
+                  <AutoTextarea
+                    class="exp-item-input"
+                    :model-value="line"
+                    placeholder="用 STAR 法则描述：行动+技术+量化"
+                    :aria-label="`工作经历 ${index + 1} 第 ${lineIdx + 1} 条内容`"
+                    @update:model-value="updateItem(index, lineIdx, $event)"
+                  />
                   <button class="remove-btn" :aria-label="`删除第 ${lineIdx + 1} 条工作内容`" title="删除" @click="removeItem(index, lineIdx)"><AppIcon name="times" /></button>
                 </div>
               </template>
@@ -70,7 +84,13 @@ function add() {
               </template>
             </DraggableList>
           </div>
-          <input :value="element.achievement" placeholder="关键成果（如：缺陷逃逸率降低 40%）" class="exp-achievement-input" :aria-label="`工作经历 ${index + 1} 关键成果`" @input="updateField(index, 'achievement', ($event.target as HTMLInputElement).value)" />
+          <AutoTextarea
+            class="exp-achievement-input"
+            :model-value="element.achievement"
+            placeholder="关键成果（如：缺陷逃逸率降低 40%）"
+            :aria-label="`工作经历 ${index + 1} 关键成果`"
+            @update:model-value="updateField(index, 'achievement', $event)"
+          />
         </div>
       </template>
       <template #footer>
@@ -86,25 +106,34 @@ function add() {
   margin-bottom: 10px; background: #fafafa;
 }
 .exp-card-header {
-  display: grid; grid-template-columns: 24px 1fr 1fr 1fr 32px;
-  gap: 6px; align-items: center; margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 126px 28px;
+  grid-template-areas:
+    "drag company company del"
+    "drag role    time    del";
+  gap: 6px 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }
-.exp-input, .exp-textarea, .exp-item-input, .exp-achievement-input {
+.exp-card-header .drag-handle { grid-area: drag; }
+.exp-company { grid-area: company; }
+.exp-role { grid-area: role; }
+.exp-time { grid-area: time; }
+.exp-card-header .remove-btn { grid-area: del; align-self: start; }
+
+.exp-input {
   padding: 5px 8px; border: 1px solid #d9d9d9; border-radius: 4px;
   font-size: 12px; outline: none; font-family: inherit;
 }
-.exp-input:focus, .exp-textarea:focus, .exp-item-input:focus, .exp-achievement-input:focus {
-  border-color: #1890ff;
-}
-.exp-textarea { width: 100%; resize: vertical; }
+.exp-input:focus { border-color: #1890ff; }
 .exp-items-block { margin-top: 8px; }
 .exp-items-label { font-size: 11px; color: #888; margin-bottom: 4px; }
 .exp-item-row {
-  display: grid; grid-template-columns: 20px 1fr 24px;
-  gap: 4px; align-items: center; margin-bottom: 4px;
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) 24px;
+  gap: 4px; align-items: start; margin-bottom: 6px;
 }
 /* 卡片内嵌按钮的紧凑尺寸覆盖（基础样式由 main.css 提供） */
 .remove-btn { padding: 2px; font-size: 12px; }
 .add-btn { margin-top: 4px; padding: 4px 10px; font-size: 11px; }
-.exp-achievement-input { width: 100%; margin-top: 6px; }
+.exp-achievement-input { margin-top: 6px; }
 </style>

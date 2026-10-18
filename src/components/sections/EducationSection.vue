@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useTabsStore } from '@/stores/tabs';
 import DraggableList from '@/components/DraggableList.vue';
+import AutoTextarea from '@/components/AutoTextarea.vue';
 import AppIcon from '@/components/AppIcon.vue';
 import type { Education } from '@/types/resume';
 
@@ -23,10 +24,10 @@ function add() { tabs.addEducation(); }
       <template #item="{ element, index }">
         <div class="edu-edit-row">
           <span class="drag-handle" aria-label="拖拽以调整教育背景顺序" role="button"><AppIcon name="drag" /></span>
-          <input :value="element.school" placeholder="学校名称" :aria-label="`教育 ${index + 1} 学校`" @input="updateField(index, 'school', ($event.target as HTMLInputElement).value)" />
-          <input :value="element.major" placeholder="专业" :aria-label="`教育 ${index + 1} 专业`" @input="updateField(index, 'major', ($event.target as HTMLInputElement).value)" />
-          <input :value="element.degree" placeholder="学位（如：本科）" :aria-label="`教育 ${index + 1} 学位`" @input="updateField(index, 'degree', ($event.target as HTMLInputElement).value)" />
-          <input :value="element.time" placeholder="时间（如 2015-2019）" :aria-label="`教育 ${index + 1} 时间`" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" />
+          <AutoTextarea class="edu-school" :model-value="element.school" placeholder="学校名称" :aria-label="`教育 ${index + 1} 学校`" @update:model-value="updateField(index, 'school', $event)" />
+          <AutoTextarea class="edu-major" :model-value="element.major" placeholder="专业" :aria-label="`教育 ${index + 1} 专业`" @update:model-value="updateField(index, 'major', $event)" />
+          <input :value="element.degree" placeholder="学位" class="edu-degree" :title="element.degree" :aria-label="`教育 ${index + 1} 学位`" @input="updateField(index, 'degree', ($event.target as HTMLInputElement).value)" />
+          <input :value="element.time" placeholder="时间（如 2015-2019）" class="edu-time" :title="element.time" :aria-label="`教育 ${index + 1} 时间`" @input="updateField(index, 'time', ($event.target as HTMLInputElement).value)" />
           <button class="remove-btn" :aria-label="`删除教育 ${element.school || index + 1}`" title="删除" @click="remove(index)"><AppIcon name="trash" /></button>
         </div>
       </template>
@@ -39,9 +40,22 @@ function add() { tabs.addEducation(); }
 
 <style scoped>
 .edu-edit-row {
-  display: grid; grid-template-columns: 24px 1.2fr 1fr 0.8fr 1fr 32px;
-  gap: 6px; align-items: center; margin-bottom: 6px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1.2fr) minmax(0, 1fr) 100px 28px;
+  grid-template-areas:
+    "drag school school time   del"
+    "drag major  major  degree del";
+  gap: 6px 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }
+.edu-edit-row .drag-handle { grid-area: drag; }
+.edu-school { grid-area: school; }
+.edu-major { grid-area: major; }
+.edu-degree { grid-area: degree; }
+.edu-time { grid-area: time; }
+.edu-edit-row .remove-btn { grid-area: del; align-self: start; }
+
 .edu-edit-row input {
   padding: 5px 8px; border: 1px solid #d9d9d9; border-radius: 4px;
   font-size: 12px; outline: none;

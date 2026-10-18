@@ -2,9 +2,10 @@
 import { computed, ref } from 'vue';
 import { useSectionOrder } from '@/composables/useSectionOrder';
 import { useTabsStore } from '@/stores/tabs';
-import { getSectionLabel } from '@/types/resume';
+import { SECTION_KEYS, getSectionLabel, isEmptyResume } from '@/types/resume';
 import type { SectionId, SectionKey } from '@/types/resume';
 import { calcHealthScore, DIMENSION_MAX } from '@/utils/healthScore';
+import { mergeReorderedSections } from '@/utils/hiddenSections';
 import type { DimensionKey } from '@/utils/healthScore';
 import BasicInfoSection from './sections/BasicInfoSection.vue';
 import SummarySection from './sections/SummarySection.vue';
@@ -15,6 +16,7 @@ import EducationSection from './sections/EducationSection.vue';
 import EvaluationSection from './sections/EvaluationSection.vue';
 import TemplateSection from './sections/TemplateSection.vue';
 import CustomSectionsSection from './sections/CustomSectionsSection.vue';
+import JdMatchSection from './sections/JdMatchSection.vue';
 import DraggableList from './DraggableList.vue';
 import AppIcon from './AppIcon.vue';
 
@@ -39,6 +41,46 @@ const report = computed(() => {
   return calcHealthScore(tabs.active.data);
 });
 
+const isEmpty = computed(() => !!tabs.active && isEmptyResume(tabs.active.data));
+
+// —— 模块显隐 ——
+/** 可变序模板用当前顺序（含自定义区块）；固定布局模板只列内置区块 */
+const moduleIds = computed<SectionId[]>(() =>
+  mutable.value ? order.value : [...SECTION_KEYS],
+);
+
+const hiddenCount = computed(() => tabs.active?.hiddenSections.length ?? 0);
+
+/** 模块面板只展示"会出现在简历上"的模块，隐藏的收进底部折叠区 */
+const visibleModules = computed<SectionId[]>(() =>
+  moduleIds.value.filter(id => !isSectionHidden(id)),
+);
+
+const hiddenModules = computed<SectionId[]>(() =>
+  moduleIds.value.filter(id => isSectionHidden(id)),
+);
+
+function isSectionHidden(id: SectionId): boolean {
+  return tabs.active?.hiddenSections.includes(id) ?? false;
+}
+
+/** 拖拽只作用于可见模块：把新顺序按位回填到完整 order，隐藏模块的位置保持不变 */
+function onReorder(next: SectionId[]): void {
+  if (!mutable.value) return;
+  tabs.setSectionOrder(
+    mergeReorderedSections(order.value, tabs.active?.hiddenSections ?? [], next),
+  );
+}
+
+function switchTitle(id: SectionId): string {
+  const label = getSectionLabel(id, tabs.active?.data.customSections);
+  return isSectionHidden(id) ? `显示「${label}」` : `隐藏「${label}」`;
+}
+
+function onToggleModule(id: SectionId): void {
+  tabs.setSectionHidden(id, !isSectionHidden(id));
+}
+
 function gradeClass(grade: string): string {
   return `grade-${grade}`;
 }
@@ -62,7 +104,7 @@ function focusSection(target?: SectionKey) {
 <template>
   <div class="editor-panel">
     <!-- 健康度评分卡片 -->
-    <section v-if="report" class="health-card" :class="gradeClass(report.grade)">
+    <section v-if="report && !isEmpty" class="health-card" :class="gradeClass(report.grade)">
       <button class="health-header" type="button" :aria-expanded="expanded" @click="expanded = !expanded">
         <div class="health-title">
           <span class="health-label">简历健康度</span>
@@ -107,38 +149,105 @@ function focusSection(target?: SectionKey) {
             </li>
           </ul>
         </div>
-        <p v-else class="suggestions-empty">简历已相当完善，无需特别改进。</p>
+        <p v-else class="suggestions-empty">
+          {{ report.total >= 90 ? '简历已相当完善，无需特别改进。' : '整体结构完整，可继续补充量化成果与岗位关键词。' }}
+        </p>
       </div>
     </section>
 
-    <!-- 区块顺序面板（仅支持的模板显示） -->
-    <div v-if="mutable" class="section-order-panel">
+    <!-- 岗位匹配（本地 JD 关键词分析） -->
+    <JdMatchSection v-if="!isEmpty" />
+
+    <!-- 模块面板：显隐开关 + 排序（排序仅可变序模板可用） -->
+    <div class="section-order-panel">
       <div class="order-header">
-        <h3 class="order-title">区块顺序</h3>
-        <button class="reset-btn" aria-label="恢复默认区块顺序" @click="resetToDefault">恢复默认</button>
+        <h3 class="order-title">模块</h3>
+        <div class="order-actions">
+          <button v-if="hiddenCount > 0" class="reset-btn" @click="tabs.showAllSections()">全部显示</button>
+          <button v-if="mutable" class="reset-btn" aria-label="恢复默认区块顺序" @click="resetToDefault">恢复默认</button>
+        </div>
       </div>
-      <DraggableList v-model="order">
-        <template #item="{ element }">
-          <div class="order-item">
-            <span class="drag-handle" aria-label="拖拽以调整顺序" role="button"><AppIcon name="drag" /></span>
-            <span>{{ getSectionLabel(element as SectionId, tabs.active?.data.customSections) }}</span>
-          </div>
-        </template>
-      </DraggableList>
-    </div>
-    <div v-else class="section-order-disabled" role="note">
-      当前模板不支持调整区块顺序
+
+      <!-- 可见模块 = 最终简历上出现的模块 -->
+      <div v-if="mutable" class="visible-modules">
+        <DraggableList
+          :model-value="visibleModules"
+          @update:model-value="onReorder"
+        >
+          <template #item="{ element }">
+            <div class="order-item">
+              <span class="drag-handle" aria-label="拖拽以调整顺序" role="button"><AppIcon name="drag" /></span>
+              <span class="order-name">{{ getSectionLabel(element as SectionId, tabs.active?.data.customSections) }}</span>
+              <button
+                type="button"
+                class="module-switch"
+                role="switch"
+                aria-checked="true"
+                :title="switchTitle(element as SectionId)"
+                :aria-label="getSectionLabel(element as SectionId, tabs.active?.data.customSections)"
+                @click="onToggleModule(element as SectionId)"
+              >
+                <span class="switch-track" aria-hidden="true"><span class="switch-knob" /></span>
+              </button>
+            </div>
+          </template>
+        </DraggableList>
+      </div>
+
+      <ul v-else class="order-list visible-modules">
+        <li v-for="id in visibleModules" :key="id" class="order-item">
+          <span class="order-name">{{ getSectionLabel(id, tabs.active?.data.customSections) }}</span>
+          <button
+            type="button"
+            class="module-switch"
+            role="switch"
+            aria-checked="true"
+            :title="switchTitle(id)"
+            :aria-label="getSectionLabel(id, tabs.active?.data.customSections)"
+            @click="onToggleModule(id)"
+          >
+            <span class="switch-track" aria-hidden="true"><span class="switch-knob" /></span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- 已隐藏：从最终简历结构里移出的模块，打开开关即可放回 -->
+      <details v-if="hiddenModules.length" class="hidden-modules">
+        <summary class="hidden-summary">
+          已隐藏 {{ hiddenModules.length }} 个模块
+          <span class="hidden-hint">打开开关即可放回简历</span>
+        </summary>
+        <ul class="order-list">
+          <li v-for="id in hiddenModules" :key="id" class="order-item is-off">
+            <span class="order-name">{{ getSectionLabel(id, tabs.active?.data.customSections) }}</span>
+            <button
+              type="button"
+              class="module-switch"
+              role="switch"
+              aria-checked="false"
+              :title="switchTitle(id)"
+              :aria-label="getSectionLabel(id, tabs.active?.data.customSections)"
+              @click="onToggleModule(id)"
+            >
+              <span class="switch-track" aria-hidden="true"><span class="switch-knob" /></span>
+            </button>
+          </li>
+        </ul>
+      </details>
+
+      <p v-if="!mutable" class="section-order-disabled" role="note">当前模板区块顺序固定，仍可隐藏模块</p>
+      <p class="module-hint">这里的顺序就是简历上的顺序；关掉开关的模块不会出现在简历和导出文件里，内容会保留。</p>
     </div>
 
     <!-- 编辑区块固定顺序：基本信息 → 模板 → 其他 -->
     <div data-health-target="basic"><BasicInfoSection /></div>
     <TemplateSection />
-    <div data-health-target="summary"><SummarySection /></div>
-    <div data-health-target="skills"><SkillsSection /></div>
-    <div data-health-target="experience"><ExperienceSection /></div>
-    <div data-health-target="projects"><ProjectsSection /></div>
-    <div data-health-target="education"><EducationSection /></div>
-    <div data-health-target="evaluation"><EvaluationSection /></div>
+    <div data-health-target="summary" :class="{ 'block-off': isSectionHidden('summary') }"><SummarySection /></div>
+    <div data-health-target="skills" :class="{ 'block-off': isSectionHidden('skills') }"><SkillsSection /></div>
+    <div data-health-target="experience" :class="{ 'block-off': isSectionHidden('experience') }"><ExperienceSection /></div>
+    <div data-health-target="projects" :class="{ 'block-off': isSectionHidden('projects') }"><ProjectsSection /></div>
+    <div data-health-target="education" :class="{ 'block-off': isSectionHidden('education') }"><EducationSection /></div>
+    <div data-health-target="evaluation" :class="{ 'block-off': isSectionHidden('evaluation') }"><EvaluationSection /></div>
     <CustomSectionsSection />
   </div>
 </template>
@@ -246,6 +355,7 @@ function focusSection(target?: SectionKey) {
   margin-bottom: 8px;
 }
 .order-title { margin: 0; font-size: 13px; font-weight: 600; color: #333; }
+.order-actions { display: flex; gap: 6px; }
 .reset-btn {
   padding: 2px 8px; border: 1px solid #d9d9d9;
   background: #fff; cursor: pointer; border-radius: 3px;
@@ -253,14 +363,71 @@ function focusSection(target?: SectionKey) {
 }
 .reset-btn:hover { border-color: #1890ff; color: #1890ff; }
 .order-item {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 8px;
   padding: 4px 8px; background: #fff; border: 1px solid #e8e8e8;
   border-radius: 3px; margin-bottom: 4px; font-size: 12px;
 }
+.order-list { list-style: none; margin: 0; padding: 0; }
+.order-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: #333; }
+.order-item.is-off .order-name { color: #b0b0b0; text-decoration: line-through; }
+
+/* 模块显隐开关 */
+.module-switch {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+  padding: 0; border: none; background: none; cursor: pointer;
+  border-radius: 9px;
+}
+.switch-track {
+  position: relative; width: 32px; height: 18px; border-radius: 9px;
+  background: #d9d9d9; transition: background-color 0.2s;
+}
+.switch-knob {
+  position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s;
+}
+.module-switch[aria-checked="true"] .switch-track { background: #1890ff; }
+.module-switch[aria-checked="true"] .switch-knob { transform: translateX(14px); }
+.module-switch:focus-visible {
+  outline: 2px solid #91d5ff; outline-offset: 2px;
+}
+
+/* 已隐藏：从最终简历结构里移出的模块 */
+.hidden-modules {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+}
+.hidden-summary {
+  display: flex; align-items: center; gap: 6px;
+  cursor: pointer; font-size: 12px; color: #8c8c8c;
+  list-style: none; user-select: none;
+}
+.hidden-summary::-webkit-details-marker { display: none; }
+.hidden-summary::before {
+  content: '▸'; font-size: 10px; transition: transform 0.2s;
+}
+.hidden-modules[open] .hidden-summary::before { transform: rotate(90deg); }
+.hidden-hint { font-size: 11px; color: #bbb; }
+.hidden-modules .order-list { margin-top: 6px; }
+.hidden-modules .order-item { background: #fafafa; border-style: dashed; }
+
+.module-hint { margin: 6px 0 0; font-size: 11px; line-height: 1.5; color: #999; }
 .section-order-disabled {
-  margin-bottom: 20px; padding: 8px 12px;
-  background: #fafafa; border-radius: 4px;
-  font-size: 12px; color: #999; text-align: center;
+  margin: 8px 0 0; font-size: 11px; color: #999;
+}
+
+/* 被隐藏的编辑区块置灰，鼠标移入恢复可读 */
+.block-off { position: relative; }
+.block-off > .editor-section { opacity: 0.5; transition: opacity 0.2s; }
+.block-off:hover > .editor-section,
+.block-off:focus-within > .editor-section { opacity: 1; }
+.block-off::after {
+  content: '已隐藏';
+  position: absolute; top: 0; right: 0;
+  padding: 0 8px; border-radius: 999px; line-height: 18px;
+  font-size: 11px; color: #d46b08;
+  background: #fff7e6; border: 1px solid #ffd591;
+  pointer-events: none;
 }
 
 /* 窄屏：减小内边距，给编辑控件更多空间 */
@@ -268,3 +435,4 @@ function focusSection(target?: SectionKey) {
   .editor-panel { padding: 10px; }
 }
 </style>
+

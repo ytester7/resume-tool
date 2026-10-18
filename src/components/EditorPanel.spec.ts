@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import EditorPanel from './EditorPanel.vue';
 import { useTabsStore } from '@/stores/tabs';
 import BasicInfoSection from './sections/BasicInfoSection.vue';
 import TemplateSection from './sections/TemplateSection.vue';
 import SkillsSection from './sections/SkillsSection.vue';
+
 
 describe('EditorPanel', () => {
   beforeEach(() => {
@@ -36,6 +37,104 @@ describe('EditorPanel', () => {
   });
 });
 
+describe('EditorPanel - 模块显隐', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  function switchOf(wrapper: VueWrapper, label: string) {
+    return wrapper.findAll('.module-switch').find(i => i.attributes('aria-label') === label);
+  }
+
+  it('classic 模板按区块顺序列出 6 个内置模块开关', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    const wrapper = mount(EditorPanel);
+    expect(wrapper.findAll('.module-switch')).toHaveLength(6);
+    expect(wrapper.findAll('.order-name').map(n => n.text()))
+      .toEqual(['专业概述', '专业技能', '工作经历', '项目经历', '教育背景', '自我评价']);
+  });
+
+  it('关闭开关后写入 hiddenSections 并给区块打上已隐藏标记', async () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    const wrapper = mount(EditorPanel);
+
+    await switchOf(wrapper, '工作经历')!.trigger('click');
+
+    expect(tabs.active?.hiddenSections).toEqual(['experience']);
+    expect(wrapper.find('[data-health-target="experience"]').classes()).toContain('block-off');
+  });
+
+  it('隐藏的模块从主列表移出，进入「已隐藏」折叠区', async () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    const wrapper = mount(EditorPanel);
+    expect(wrapper.find('.hidden-modules').exists()).toBe(false);
+
+    await switchOf(wrapper, '工作经历')!.trigger('click');
+
+    expect(wrapper.find('.visible-modules').text()).not.toContain('工作经历');
+    expect(wrapper.find('.hidden-modules').text()).toContain('工作经历');
+    expect(wrapper.find('.hidden-summary').text()).toContain('已隐藏 1 个模块');
+  });
+
+  it('在「已隐藏」区打开开关后模块回到主列表', async () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    const wrapper = mount(EditorPanel);
+
+    await switchOf(wrapper, '教育背景')!.trigger('click');
+    expect(wrapper.find('.hidden-modules').exists()).toBe(true);
+
+    await switchOf(wrapper, '教育背景')!.trigger('click');
+
+    expect(tabs.active?.hiddenSections).toEqual([]);
+    expect(wrapper.find('.hidden-modules').exists()).toBe(false);
+    expect(wrapper.find('.visible-modules').text()).toContain('教育背景');
+    expect(wrapper.find('[data-health-target="education"]').classes()).not.toContain('block-off');
+  });
+
+
+
+  it('有隐藏模块时出现「全部显示」按钮，点击后清空', async () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    const wrapper = mount(EditorPanel);
+    expect(wrapper.findAll('.reset-btn').map(b => b.text())).not.toContain('全部显示');
+
+    await switchOf(wrapper, '项目经历')!.trigger('click');
+    const showAll = wrapper.findAll('.reset-btn').find(b => b.text() === '全部显示');
+    expect(showAll).toBeTruthy();
+
+    await showAll!.trigger('click');
+    expect(tabs.active?.hiddenSections).toEqual([]);
+  });
+
+  it('固定布局模板也提供模块开关（无拖拽排序）', () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A', template: 'modern' });
+    const wrapper = mount(EditorPanel);
+
+    expect(wrapper.find('.order-list').exists()).toBe(true);
+    expect(wrapper.find('.section-order-disabled').exists()).toBe(true);
+    expect(wrapper.findAll('.module-switch')).toHaveLength(6);
+  });
+
+  it('自定义区块也会出现在模块列表并可隐藏', async () => {
+    const tabs = useTabsStore();
+    tabs.open({ title: 'A' });
+    tabs.addCustomSection();
+    const wrapper = mount(EditorPanel);
+
+    const items = wrapper.findAll('.order-item');
+    expect(items).toHaveLength(7);
+
+    await switchOf(wrapper, '自定义区块')!.trigger('click');
+    expect(tabs.active?.hiddenSections).toEqual([`custom:${tabs.active!.data.customSections[0].id}`]);
+  });
+});
+
 describe('EditorPanel - 简历健康度卡片', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -44,14 +143,19 @@ describe('EditorPanel - 简历健康度卡片', () => {
   it('渲染健康度卡片并显示总分', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     expect(wrapper.find('.health-card').exists()).toBe(true);
-    expect(wrapper.find('.score-num').text()).toBe('5');
+    expect(Number(wrapper.find('.score-num').text())).toBeGreaterThan(0);
   });
 
-  it('空简历显示"待改进"等级', () => {
+  it('空简历隐藏健康度卡片，填写后显示"待改进"等级', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    const empty = mount(EditorPanel);
+    expect(empty.find('.health-card').exists()).toBe(false);
+
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     expect(wrapper.find('.grade-badge').text()).toBe('待改进');
     expect(wrapper.find('.health-card.grade-待改进').exists()).toBe(true);
@@ -60,6 +164,7 @@ describe('EditorPanel - 简历健康度卡片', () => {
   it('渲染 5 个维度条', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     expect(wrapper.findAll('.dim-row')).toHaveLength(5);
     // 维度名称齐全
@@ -67,9 +172,10 @@ describe('EditorPanel - 简历健康度卡片', () => {
     expect(names).toEqual(['完整性', '量化度', '充实度', '关键词', '规范性']);
   });
 
-  it('空简历生成改进建议列表', () => {
+  it('低分简历生成改进建议列表', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     expect(wrapper.find('.suggestions').exists()).toBe(true);
     expect(wrapper.findAll('.suggestion-item').length).toBeGreaterThan(0);
@@ -127,6 +233,7 @@ describe('EditorPanel - 简历健康度卡片', () => {
   it('点击折叠按钮切换展开状态', async () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     // 初始展开
     expect(wrapper.find('.health-toggle.collapsed').exists()).toBe(false);
@@ -138,6 +245,7 @@ describe('EditorPanel - 简历健康度卡片', () => {
   it('建议项含 target 时可点击且有 clickable 类', () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     const clickableItems = wrapper.findAll('.suggestion-item.clickable');
     expect(clickableItems.length).toBeGreaterThan(0);
@@ -146,6 +254,7 @@ describe('EditorPanel - 简历健康度卡片', () => {
   it('点击带 target 的建议不抛异常', async () => {
     const tabs = useTabsStore();
     tabs.open({ title: 'A' });
+    tabs.patchActive({ name: '张三' });
     const wrapper = mount(EditorPanel);
     const item = wrapper.find('.suggestion-item.clickable');
     // querySelector 在 jsdom 中找不到元素也不应抛错
@@ -153,3 +262,4 @@ describe('EditorPanel - 简历健康度卡片', () => {
     expect(true).toBe(true);
   });
 });
+

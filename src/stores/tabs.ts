@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, toRaw } from 'vue';
 import type {
   ResumeSession, ResumeData, TemplateName, SectionId,
   CustomSection, ThemeConfig, Skill, Experience, Project, Education,
 } from '@/types/resume';
 import { TEMPLATE_REGISTRY, defaultResumeData, generateId } from '@/types/resume';
+import { sanitizeHiddenSections } from '@/utils/hiddenSections';
 
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<ResumeSession[]>([]);
@@ -15,15 +16,18 @@ export const useTabsStore = defineStore('tabs', () => {
   );
 
   function open(opts: Partial<ResumeSession> = {}): ResumeSession {
+    const data = opts.data ? structuredClone(toRaw(opts.data)) : defaultResumeData();
     const session: ResumeSession = {
       id: opts.id || generateId(),
-      title: opts.title || '未命名',
-      data: opts.data ? structuredClone(opts.data) : defaultResumeData(),
+      title: opts.title || data.name.trim() || '未命名',
+      data,
       template: opts.template || 'classic',
       sectionOrder: opts.sectionOrder ?? null,
       fileHandle: opts.fileHandle ?? null,
       dirty: opts.dirty ?? false,
       theme: opts.theme ?? null,
+      targetJd: opts.targetJd ?? '',
+      hiddenSections: opts.hiddenSections ?? [],
     };
     tabs.value.push(session);
     activeId.value = session.id;
@@ -50,6 +54,35 @@ export const useTabsStore = defineStore('tabs', () => {
   function patchActive(patch: Partial<ResumeData>): void {
     if (!active.value) return;
     Object.assign(active.value.data, patch);
+    // 姓名变化时同步 Tab 标题，避免所有 Tab 都叫"未命名"
+    if (typeof patch.name === 'string') {
+      active.value.title = patch.name.trim() || '未命名';
+    }
+    active.value.dirty = true;
+  }
+
+  /** 用快照整体替换当前 Tab 的数据（撤销/重做专用） */
+  function replaceActive(snapshot: {
+    data: ResumeData;
+    template?: TemplateName;
+    sectionOrder?: SectionId[] | null;
+    theme?: ThemeConfig | null;
+    hiddenSections?: SectionId[];
+  }): void {
+    if (!active.value) return;
+    active.value.data = structuredClone(snapshot.data);
+    if (snapshot.template) active.value.template = snapshot.template;
+    if (snapshot.sectionOrder !== undefined) active.value.sectionOrder = snapshot.sectionOrder;
+    if (snapshot.theme !== undefined) active.value.theme = snapshot.theme;
+    if (snapshot.hiddenSections !== undefined) {
+      active.value.hiddenSections = sanitizeHiddenSections(snapshot.hiddenSections);
+    }
+    active.value.dirty = true;
+  }
+
+  function setTargetJd(jd: string): void {
+    if (!active.value) return;
+    active.value.targetJd = jd;
     active.value.dirty = true;
   }
 
@@ -72,6 +105,31 @@ export const useTabsStore = defineStore('tabs', () => {
       active.value.theme = theme;
       active.value.dirty = true;
     }
+  }
+
+  /** 隐藏 / 显示某个区块：数据保留，仅影响预览与导出 */
+  function setSectionHidden(id: SectionId, hidden: boolean): void {
+    const tab = active.value;
+    if (!tab) return;
+    if (tab.hiddenSections.includes(id) === hidden) return;
+    tab.hiddenSections = hidden
+      ? [...tab.hiddenSections, id]
+      : tab.hiddenSections.filter(x => x !== id);
+    tab.dirty = true;
+  }
+
+  function toggleSectionHidden(id: SectionId): void {
+    const tab = active.value;
+    if (!tab) return;
+    setSectionHidden(id, !tab.hiddenSections.includes(id));
+  }
+
+  /** 一次性恢复所有被隐藏的区块 */
+  function showAllSections(): void {
+    const tab = active.value;
+    if (!tab || tab.hiddenSections.length === 0) return;
+    tab.hiddenSections = [];
+    tab.dirty = true;
   }
 
   function addCustomSection(): void {
@@ -97,6 +155,9 @@ export const useTabsStore = defineStore('tabs', () => {
         (k) => k !== `custom:${sec.id}`,
       );
     }
+    active.value.hiddenSections = active.value.hiddenSections.filter(
+      (k) => k !== `custom:${sec.id}`,
+    );
     active.value.dirty = true;
   }
 
@@ -178,7 +239,9 @@ export const useTabsStore = defineStore('tabs', () => {
   return {
     tabs, activeId, active,
     open, switchTo, close,
-    patchActive, setTemplate, setSectionOrder, setTheme, rename, markClean, markDirty,
+    patchActive, replaceActive, setTargetJd,
+    setTemplate, setSectionOrder, setTheme, rename, markClean, markDirty,
+    setSectionHidden, toggleSectionHidden, showAllSections,
     addSkill, removeSkill, addExperience, removeExperience,
     addProject, removeProject, addEducation, removeEducation,
     addCustomSection, removeCustomSection,

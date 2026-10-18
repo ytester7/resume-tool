@@ -1,16 +1,18 @@
 import { test, expect } from '@playwright/test';
+import { startBlank } from './helpers';
 
 test('新建多个 Tab 并切换', async ({ page }) => {
-  await page.goto('/');
-  // 初始有 1 个 Tab
+  await startBlank(page);
   await expect(page.locator('.tab-item')).toHaveCount(1);
 
-  // 点击新建按钮
   await page.click('.tab-new-btn');
   await expect(page.locator('.tab-item')).toHaveCount(2);
 
   await page.click('.tab-new-btn');
   await expect(page.locator('.tab-item')).toHaveCount(3);
+
+  // 新 Tab 不应立即带上未保存标记
+  await expect(page.locator('.tab-dirty-mark')).toHaveCount(0);
 
   // 切换到第一个 Tab
   await page.locator('.tab-item').first().click();
@@ -18,9 +20,7 @@ test('新建多个 Tab 并切换', async ({ page }) => {
 });
 
 test('关闭 dirty Tab 弹出确认对话框', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForSelector('input[placeholder="请输入姓名"]');
-  // 修改内容使 Tab 变 dirty
+  await startBlank(page);
   await page.fill('input[placeholder="请输入姓名"]', '测试');
   await expect(page.locator('.tab-dirty-mark')).toBeVisible();
 
@@ -30,19 +30,13 @@ test('关闭 dirty Tab 弹出确认对话框', async ({ page }) => {
 
   // 关闭第一个 Tab（dirty）
   await page.locator('.tab-item').first().locator('.tab-close-btn').click();
-  // 应该出现确认对话框
   await expect(page.locator('.confirm-dialog')).toBeVisible();
-  // 点击取消
   await page.locator('.confirm-btn', { hasText: '取消' }).click();
-  // Tab 数量应该不变
   await expect(page.locator('.tab-item')).toHaveCount(2);
 });
 
-test('保存到文件清除 dirty 标记', async ({ page }) => {
-  await page.goto('/');
-  await page.waitForSelector('input[placeholder="请输入姓名"]');
-  await page.fill('input[placeholder="请输入姓名"]', '测试保存');
-  await expect(page.locator('.tab-dirty-mark')).toBeVisible();
-  // 由于浏览器环境下无法真正调用 showSaveFilePicker，这里仅验证 Ctrl+S 不会报错
-  // 真实保存流程需要手工验证
+test('Tab 标题跟随姓名自动更新', async ({ page }) => {
+  await startBlank(page);
+  await page.fill('input[placeholder="请输入姓名"]', '张三');
+  await expect(page.locator('.tab-item').first()).toContainText('张三');
 });

@@ -15,6 +15,8 @@ export function usePdfExport() {
     }
 
     try {
+      // 导出时隐藏分页辅助线，避免被截进 PDF
+      element.classList.add('exporting');
       // 动态导入避免首屏加载 html2pdf
       const html2pdf = (await import('html2pdf.js')).default;
 
@@ -44,6 +46,8 @@ export function usePdfExport() {
       console.error('PDF 导出失败', e);
       ui.toastError('PDF 导出失败: ' + toErrorMessage(e));
       return false;
+    } finally {
+      element.classList.remove('exporting');
     }
   }
 

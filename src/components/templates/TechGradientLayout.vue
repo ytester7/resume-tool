@@ -17,7 +17,10 @@ defineProps<{
 <template>
   <div class="tech-gradient-template">
     <aside class="gradient-bar">
-      <div class="avatar">{{ data.name ? data.name.charAt(0) : '?' }}</div>
+      <div class="avatar">
+        <img v-if="data.photo" :src="data.photo" alt="" />
+        <template v-else>{{ data.name ? data.name.charAt(0) : '?' }}</template>
+      </div>
       <div v-if="data.phone" class="bar-icon"><AppIcon name="phone" /></div>
       <div v-if="data.email" class="bar-icon"><AppIcon name="email" /></div>
       <div v-if="data.github" class="bar-icon"><AppIcon name="github" /></div>
@@ -114,7 +117,9 @@ defineProps<{
   font-weight: 700;
   margin-bottom: 20px;
   border: 2px solid rgba(255, 255, 255, 0.4);
+  overflow: hidden;
 }
+.gradient-bar .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gradient-bar .bar-icon {
   width: 36px;
   height: 36px;
