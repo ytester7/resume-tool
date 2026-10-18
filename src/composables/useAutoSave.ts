@@ -3,9 +3,23 @@ import { useDebounceFn } from '@vueuse/core';
 import { useTabsStore } from '@/stores/tabs';
 import { useFileSystemStore } from '@/stores/fileSystem';
 import { serializeResume } from '@/utils/parseResume';
+import type { ResumeSession } from '@/types/resume';
 
 const FILE_SAVE_DEBOUNCE_MS = 2000;
 const LOCAL_STORAGE_INTERVAL_MS = 30000;
+
+function snapshotPayload(tab: ResumeSession) {
+  return {
+    data: tab.data,
+    template: tab.template,
+    sectionOrder: tab.sectionOrder,
+    title: tab.title,
+    savedAt: new Date().toISOString(),
+    theme: tab.theme,
+    targetJd: tab.targetJd,
+    hiddenSections: tab.hiddenSections,
+  };
+}
 
 export function useAutoSave() {
   const tabs = useTabsStore();
@@ -14,17 +28,33 @@ export function useAutoSave() {
   const debouncedFileSave = useDebounceFn(async () => {
     const tab = tabs.active;
     if (!tab?.fileHandle || !tab.dirty) return;
-    const content = serializeResume(tab.data, tab.template, tab.sectionOrder, tab.theme);
+    const content = serializeResume(
+      tab.data, tab.template, tab.sectionOrder, tab.theme, tab.targetJd, tab.hiddenSections,
+    );
     const ok = await fs.writeToFile(tab.fileHandle, content);
     if (ok) tab.dirty = false;
   }, FILE_SAVE_DEBOUNCE_MS);
 
   const stopWatch = watch(
-    () => tabs.active ? [tabs.active.data, tabs.active.template, tabs.active.sectionOrder, tabs.active.theme] : null,
     () => {
-      if (!tabs.active) return;
-      tabs.active.dirty = true;
-      if (tabs.active.fileHandle) {
+      const tab = tabs.active;
+      if (!tab) return null;
+      return {
+        id: tab.id,
+        data: tab.data,
+        template: tab.template,
+        sectionOrder: tab.sectionOrder,
+        theme: tab.theme,
+        targetJd: tab.targetJd,
+        hiddenSections: tab.hiddenSections,
+      };
+    },
+    (val, old) => {
+      const tab = tabs.active;
+      // 新建 / 关闭 / 切换 Tab 时不应把新 Tab 标脏；只有同一 Tab 的内容变化才算修改
+      if (!tab || !val || !old || val.id !== old.id) return;
+      tab.dirty = true;
+      if (tab.fileHandle) {
         debouncedFileSave();
       }
     },
@@ -35,14 +65,7 @@ export function useAutoSave() {
     for (const tab of tabs.tabs) {
       if (!tab.dirty) continue;
       try {
-        localStorage.setItem(`resume_tab_${tab.id}`, JSON.stringify({
-          data: tab.data,
-          template: tab.template,
-          sectionOrder: tab.sectionOrder,
-          title: tab.title,
-          savedAt: new Date().toISOString(),
-          theme: tab.theme,
-        }));
+        localStorage.setItem(`resume_tab_${tab.id}`, JSON.stringify(snapshotPayload(tab)));
       } catch {
         // quota exceeded 静默失败
       }
@@ -53,14 +76,7 @@ export function useAutoSave() {
     for (const tab of tabs.tabs) {
       if (!tab.dirty) continue;
       try {
-        localStorage.setItem(`resume_tab_${tab.id}`, JSON.stringify({
-          data: tab.data,
-          template: tab.template,
-          sectionOrder: tab.sectionOrder,
-          title: tab.title,
-          savedAt: new Date().toISOString(),
-          theme: tab.theme,
-        }));
+        localStorage.setItem(`resume_tab_${tab.id}`, JSON.stringify(snapshotPayload(tab)));
       } catch {
         // 静默
       }
@@ -84,6 +100,8 @@ export interface OrphanedTabData {
     title: string;
     savedAt: string;
     theme?: any;
+    targetJd?: string;
+    hiddenSections?: string[];
   };
 }
 

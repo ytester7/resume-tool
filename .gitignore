@@ -8,6 +8,9 @@ resume-builder/
 # === 内部开发文档（开发计划/设计文档，非用户文档） ===
 docs/superpowers/
 
+# === AI 助手本地数据（记忆目录，不入库） ===
+.workbuddy/
+
 # === Node.js / 包管理 ===
 node_modules/
 npm-debug.log*

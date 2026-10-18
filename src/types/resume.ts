@@ -9,6 +9,11 @@ export type SectionKey =
   | 'summary' | 'skills' | 'experience' | 'projects'
   | 'education' | 'evaluation';
 
+/** 内置区块的规范顺序（用于固定布局模板的模块面板、Word 导出兜底） */
+export const SECTION_KEYS: SectionKey[] = [
+  'summary', 'skills', 'experience', 'projects', 'education', 'evaluation',
+];
+
 /** 区块标识：内置区块用 SectionKey，自定义区块用 `custom:${id}` */
 export type SectionId = SectionKey | `custom:${string}`;
 
@@ -29,6 +34,8 @@ export interface ResumeData {
   name: string; title: string; phone: string; email: string;
   age: string; experienceYears: string; jobIntention: string; salary: string;
   github: string; website: string; summary: string;
+  /** 证件照（data URL，前端已压缩为宽 480px 的 JPEG） */
+  photo?: string;
   skills: Skill[]; experience: Experience[]; projects: Project[];
   education: Education[]; evaluation: EvaluationItem[];
   customSections: CustomSection[];
@@ -46,6 +53,10 @@ export interface ResumeFileMeta {
   savedAt: string;
   version: '2.0';
   theme?: ThemeConfig;
+  /** 目标岗位 JD 原文（仅本地保存，用于岗位匹配分析） */
+  targetJd?: string;
+  /** 被隐藏的区块（数据仍保留，只是不渲染） */
+  hiddenSections?: SectionId[];
 }
 
 export type ResumeFile = ResumeData & { _meta?: ResumeFileMeta };
@@ -59,6 +70,10 @@ export interface ResumeSession {
   fileHandle: FileSystemFileHandle | null;
   dirty: boolean;
   theme: ThemeConfig | null;
+  /** 目标岗位 JD（本地分析用，随文件 _meta 保存） */
+  targetJd: string;
+  /** 隐藏的区块（数据保留，仅预览/导出时不渲染） */
+  hiddenSections: SectionId[];
 }
 
 export interface TemplateMeta {
@@ -113,11 +128,24 @@ export function defaultResumeData(): ResumeData {
   return {
     name: '', title: '', phone: '', email: '', age: '',
     experienceYears: '', jobIntention: '', salary: '',
-    github: '', website: '', summary: '',
+    github: '', website: '', summary: '', photo: '',
     skills: [], experience: [], projects: [], education: [],
     evaluation: [{ text: '' }, { text: '' }, { text: '' }],
     customSections: [],
   };
+}
+
+/** 简历是否完全空白（用于欢迎页引导判断） */
+export function isEmptyResume(data: ResumeData): boolean {
+  return !data.name.trim()
+    && !data.summary.trim()
+    && !data.phone.trim()
+    && !data.email.trim()
+    && data.skills.length === 0
+    && data.experience.length === 0
+    && data.projects.length === 0
+    && data.education.length === 0
+    && !data.customSections.length;
 }
 
 export function generateId(): string {

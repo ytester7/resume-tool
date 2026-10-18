@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTabsStore } from '@/stores/tabs';
+import AutoTextarea from '@/components/AutoTextarea.vue';
 
 const tabs = useTabsStore();
 
@@ -21,14 +22,14 @@ function update(idx: number, value: string) {
   <section class="editor-section">
     <h3 class="section-heading">自我评价</h3>
     <div v-for="(item, idx) in (tabs.active?.data.evaluation ?? [])" :key="idx" class="eval-item">
-      <label class="eval-label" :for="`eval-textarea-${idx}`">{{ LABELS[idx] || `段落 ${idx + 1}` }}</label>
-      <textarea
-        :id="`eval-textarea-${idx}`"
-        :value="item.text"
-        :placeholder="PLACEHOLDERS[idx] || '请输入...'"
-        rows="2"
+      <span class="eval-label">{{ LABELS[idx] || `段落 ${idx + 1}` }}</span>
+      <AutoTextarea
         class="eval-textarea"
-        @input="update(idx, ($event.target as HTMLTextAreaElement).value)"
+        :model-value="item.text"
+        :placeholder="PLACEHOLDERS[idx] || '请输入...'"
+        :rows="2"
+        :aria-label="LABELS[idx] || `自我评价段落 ${idx + 1}`"
+        @update:model-value="update(idx, $event)"
       />
     </div>
   </section>
@@ -37,11 +38,9 @@ function update(idx: number, value: string) {
 <style scoped>
 .eval-item { margin-bottom: 10px; }
 .eval-label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-.eval-textarea {
-  width: 100%; padding: 6px 8px;
-  border: 1px solid #d9d9d9; border-radius: 4px;
-  font-size: 13px; line-height: 1.5; resize: vertical; outline: none;
-  font-family: inherit;
+textarea.eval-textarea {
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.5;
 }
-.eval-textarea:focus { border-color: #1890ff; }
 </style>

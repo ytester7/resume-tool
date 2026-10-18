@@ -20,7 +20,10 @@ const { renderSection, visibleSections } = useResumeSections(props, {
     <header class="resume-header">
       <div class="header-content">
         <div class="header-left">
-          <div class="avatar">{{ data.name ? data.name.charAt(0) : '?' }}</div>
+          <div class="avatar">
+            <img v-if="data.photo" :src="data.photo" alt="" />
+            <template v-else>{{ data.name ? data.name.charAt(0) : '?' }}</template>
+          </div>
           <div class="header-info">
             <h1 v-if="data.name">{{ data.name }}</h1>
             <div v-if="data.title" class="title">{{ data.title }}</div>
@@ -86,7 +89,9 @@ const { renderSection, visibleSections } = useResumeSections(props, {
   background: rgba(255, 255, 255, 0.2);
   border: 3px solid rgba(255, 255, 255, 0.5);
   border-radius: 50%;
+  overflow: hidden;
 }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .header-info h1 {
   margin: 0 0 4px;
   font-size: 28px;

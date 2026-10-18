@@ -3,12 +3,15 @@ import type {
 } from '@/types/resume';
 import { TEMPLATE_REGISTRY, generateId } from '@/types/resume';
 import { ResumeParseError } from './errors';
+import { sanitizeHiddenSections } from './hiddenSections';
 
 export interface ParsedResume {
   data: ResumeData;
   template: TemplateName;
   sectionOrder: SectionId[] | null;
   theme: ThemeConfig | null;
+  targetJd: string;
+  hiddenSections: SectionId[];
 }
 
 export function parseResumeFile(raw: unknown): ParsedResume {
@@ -42,6 +45,9 @@ export function parseResumeFile(raw: unknown): ParsedResume {
         }
       : null;
 
+  const targetJd = typeof meta.targetJd === 'string' ? meta.targetJd : '';
+  const hiddenSections = sanitizeHiddenSections(meta.hiddenSections);
+
   const customSections: CustomSection[] = Array.isArray(obj.customSections)
     ? obj.customSections
         .filter((c: unknown): c is Record<string, unknown> => c !== null && typeof c === 'object')
@@ -64,6 +70,7 @@ export function parseResumeFile(raw: unknown): ParsedResume {
     github: String(obj.github ?? ''),
     website: String(obj.website ?? ''),
     summary: String(obj.summary ?? ''),
+    photo: typeof obj.photo === 'string' ? obj.photo : '',
     skills: Array.isArray(obj.skills) ? obj.skills : [],
     experience: Array.isArray(obj.experience) ? obj.experience : [],
     projects: Array.isArray(obj.projects) ? obj.projects : [],
@@ -72,7 +79,7 @@ export function parseResumeFile(raw: unknown): ParsedResume {
     customSections,
   };
 
-  return { data, template, sectionOrder, theme };
+  return { data, template, sectionOrder, theme, targetJd, hiddenSections };
 }
 
 export function serializeResume(
@@ -80,6 +87,8 @@ export function serializeResume(
   template: TemplateName,
   sectionOrder: SectionId[] | null,
   theme?: ThemeConfig | null,
+  targetJd?: string,
+  hiddenSections?: SectionId[],
 ): string {
   const file: ResumeFile = {
     ...data,
@@ -89,6 +98,8 @@ export function serializeResume(
       savedAt: new Date().toISOString(),
       version: '2.0',
       ...(theme ? { theme } : {}),
+      ...(targetJd?.trim() ? { targetJd } : {}),
+      ...(hiddenSections?.length ? { hiddenSections } : {}),
     },
   };
   return JSON.stringify(file, null, 2);

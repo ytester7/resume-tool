@@ -185,4 +185,44 @@ describe('serializeResume', () => {
     const parsed = JSON.parse(json);
     expect(parsed._meta.theme).toBeUndefined();
   });
+
+  it('hiddenSections 随序列化往返', () => {
+    const json = serializeResume(baseValid, 'classic', null, null, '', ['projects', 'custom:c1']);
+    const parsed = JSON.parse(json);
+    expect(parsed._meta.hiddenSections).toEqual(['projects', 'custom:c1']);
+
+    const result = parseResumeFile(parsed);
+    expect(result.hiddenSections).toEqual(['projects', 'custom:c1']);
+  });
+
+  it('未传 hiddenSections 时 _meta 不含该字段', () => {
+    const json = serializeResume(baseValid, 'classic', null);
+    expect(JSON.parse(json)._meta.hiddenSections).toBeUndefined();
+  });
+});
+
+describe('parseResumeFile - hiddenSections', () => {
+  it('无 _meta.hiddenSections 时为空数组', () => {
+    const result = parseResumeFile({ ...baseValid });
+    expect(result.hiddenSections).toEqual([]);
+  });
+
+  it('过滤非法值只保留合法区块 id', () => {
+    const raw = {
+      ...baseValid,
+      _meta: {
+        template: 'classic', sectionOrder: null, savedAt: '', version: '2.0',
+        hiddenSections: ['skills', 'bogus', 42, 'custom:'],
+      },
+    };
+    expect(parseResumeFile(raw).hiddenSections).toEqual(['skills']);
+  });
+
+  it('hiddenSections 不是数组时为空数组', () => {
+    const raw = {
+      ...baseValid,
+      _meta: { template: 'classic', sectionOrder: null, savedAt: '', version: '2.0', hiddenSections: 'skills' },
+    };
+    expect(parseResumeFile(raw).hiddenSections).toEqual([]);
+  });
 });

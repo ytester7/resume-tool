@@ -1,0 +1,79 @@
+/**
+ * 打印样式：Ctrl+P / 导出菜单的「打印 / 另存为 PDF」走这里。
+ *
+ * 只保留 A4 简历本身，隐藏应用外壳，让浏览器输出矢量文字 PDF。
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .toolbar,
+  .tab-bar,
+  .mobile-switch,
+  .app-editor,
+  .preview-meta,
+  .page-guides,
+  .toast-container,
+  .confirm-backdrop,
+  .welcome {
+    display: none !important;
+  }
+
+  .app-root {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-main {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-preview,
+  .preview-panel,
+  .preview-scroll {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .preview-canvas {
+    width: 210mm !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .resume {
+    min-height: 0 !important;
+  }
+
+  /* 单条经历/项目尽量不跨页截断，标题不落单 */
+  .experience-item,
+  .project-item,
+  .education-item,
+  .resume-section > .section-title {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
