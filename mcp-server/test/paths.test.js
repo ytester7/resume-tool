@@ -14,10 +14,12 @@ describe('paths 数据收敛红线', () => {
 
   it('所有可写路径都在 .mcp/ 下且位于项目内', () => {
     for (const dir of [MCP_DATA_ROOT, BROWSER_PROFILE_DIR, BROWSERS_DIR, LOGS_DIR]) {
+      // 数据收敛红线：路径必须落在项目根之内。
+      // 注意不可以用「不在 $HOME 下」作断言——Linux 上项目检出本来就常在
+      // /home/xxx 下，只要在项目内就满足收敛要求（gitignore 已排除 .mcp/）。
       expect(dir.startsWith(MCP_DATA_ROOT)).toBe(true);
       expect(dir.startsWith(PROJECT_ROOT)).toBe(true);
-      expect(dir).not.toContain('AppData');
-      expect(dir).not.toContain(process.env.HOME ?? '/home/');
+      expect(path.relative(PROJECT_ROOT, dir).startsWith('..')).toBe(false);
     }
   });
 
