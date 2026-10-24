@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, dev]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, dev]
 
 jobs:
   test:
@@ -16,6 +16,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: Type check
         run: npx vue-tsc --noEmit
       - name: Unit tests
@@ -36,3 +38,17 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: E2E tests
         run: npm run e2e
+
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+      - name: Install mcp-server dependencies
+        run: npm --prefix mcp-server ci
+      - name: MCP server tests
+        run: npm run mcp:test

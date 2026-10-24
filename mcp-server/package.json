@@ -1,0 +1,21 @@
+{
+  "name": "resume-tool-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "resume-tool 的本地伴随进程：Boss直聘 JD 抓取（只读）+ MCP 工具。所有数据收敛在项目 .mcp/ 目录，绝不写入用户主目录。",
+  "scripts": {
+    "start": "node src/server.js",
+    "login": "node src/server.js --login",
+    "browsers:install": "node scripts/install-browsers.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "playwright": "^1.49.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
+}

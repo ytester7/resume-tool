@@ -18,6 +18,18 @@ https://<你的用户名>.github.io/resume-tool/
 
 也可以本地直接使用：下载 Release 构建产物，解压后双击 `index.html`（基于 `base: './'` 的 `file://` 部署）。
 
+## AI 快速上手（可选）
+
+不配置 AI 完全不影响编辑、模板、导出等核心功能；想解锁 AI 能力只需三步：
+
+1. **配 Key**：欢迎页点「配置 AI」（或工具栏齿轮）→ 选服务商（DeepSeek 国内推荐 /
+   OpenAI 兼容接口 / OpenRouter / OpenAI / Ollama 本地模型）→ 填 Key → 测试连接 → 保存
+2. **用起来**：导入旧简历点「AI 智能解析」；岗位匹配里点「简历优化工程师」，
+   按提问补充真实工作经历（只整理你说的素材，绝不编造）；编辑器右下角打开聊天助手，
+   提案卡片逐条采纳
+3. **管数据**：AI 配置、访谈素材、助手对话、版本快照全部只存本地浏览器；
+   简历本身保存在你指定的本地文件里
+
 ## 功能特性
 
 | # | 功能 | 说明 |
@@ -28,16 +40,19 @@ https://<你的用户名>.github.io/resume-tool/
 | 4 | A4 分页预览 | 210mm 页宽 + 297mm 分页线 + 实时页数，超过 2 页会提示精简 |
 | 5 | 可选中文字的 PDF | 浏览器打印通道输出矢量文字，ATS 可解析；html2pdf 作为兼容模式保留 |
 | 6 | Word（.docx）导出 | 单栏、可编辑，适配国内投递系统 |
-| 7 | 岗位 JD 匹配 | 粘贴 JD，本地抽取关键词并计算覆盖率，列出「JD 提到但简历没写」的技能 |
+| 7 | 岗位 JD 匹配 | 粘贴 JD，本地抽取关键词并计算覆盖率，列出「JD 提到但简历没写」的技能；可选 AI 深度分析（语义缺口 + 定位到区块的修改建议，本地匹配分保持免费） |
 | 8 | 简历健康度 | 5 维 100 分 + 可点击定位的改进建议 |
 | 9 | 撤销 / 重做 | 每个 Tab 独立快照栈（最多 40 步），Ctrl+Z / Ctrl+Shift+Z |
 | 10 | 多 Tab 会话 | 类 IDE 多 Tab，标题跟随姓名，重复打开同一文件会自动切换 |
 | 11 | 三级拖拽排序 | 区块级 + 列表项级 + 工作内容子项级 |
 | 12 | 证件照 | 上传后自动按 3:4 居中裁剪压缩，Executive / QA专业 / 科技渐变 三套模板已支持 |
 | 13 | 自动保存 + 崩溃恢复 | localStorage 兜底，刷新/崩溃后启动时恢复「孤儿 Tab」 |
-| 14 | 本地优先 | 业务代码零网络请求；导入解析、JD 匹配与健康度全部本地计算 |
-| 15 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
-| 16 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |
+| 14 | AI 能力（可选，自带 Key） | 工具栏齿轮配置 DeepSeek / OpenAI 兼容 / OpenRouter / OpenAI / Ollama 后解锁：旧简历 AI 解析、JD 深度分析、单条经历润色（强化动词 / 突出成果 / 精简 / 自定义）、**AI 聊天助手**（提案式修改简历，逐条采纳/忽略，Ctrl+Z 可撤销）、**简历优化工程师**（差距分析 → 访谈真实经历 → 定制提案，AI 只整理你说过的素材、绝不编造） |
+| 15 | 投递记录台账 | 工具栏公文包：粘贴 Boss直聘等平台的 JD 存为岗位记录，状态流转（意向→投递→沟通→约面→面试→offer）+ 漏斗统计 + 备注时间线；一键「分析 JD」复用岗位匹配与 AI 深度分析，「派生简历版本」生成岗位定制副本；JSON 导入导出，纯本地不连接任何平台 |
+| 16 | Boss直聘直连（可选，默认关闭） | 本地伴随进程（`mcp-server/`）：粘贴岗位链接一键抓取 JD 进台账，并把只读工具以 MCP 协议暴露给 Claude 等外部 Agent；**只读 + 限速 + 遇风控即停**，登录态与全部数据收敛在项目 `.mcp/` 目录（详见 [mcp-server/README.md](./mcp-server/README.md) 的风险声明） |
+| 17 | 本地优先 | **未配置 AI 时业务代码零网络请求**；导入解析、JD 关键词匹配、健康度与投递台账全部本地计算；AI 仅在点击对应按钮时把你可见的文本发给你自己配置的服务商，Key 只存本地浏览器 |
+| 18 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
+| 19 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |
 
 ## 技术栈
 
@@ -50,6 +65,7 @@ https://<你的用户名>.github.io/resume-tool/
 | 拖拽 | vuedraggable |
 | 导入 | pdfjs-dist（PDF 文本层）、mammoth（Word） |
 | 导出 | 浏览器打印（文本 PDF）、html2pdf.js（图片 PDF）、docx（Word） |
+| AI（可选） | 浏览器直连 OpenAI 兼容协议（fetch 实现，无 SDK 依赖），zod 校验模型输出 |
 | 测试 | Vitest + @vue/test-utils + jsdom、Playwright |
 | 质量 | vue-tsc、ESLint、GitHub Actions |
 

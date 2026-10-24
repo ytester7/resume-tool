@@ -1,13 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { SAMPLE_RESUMES } from '@/data/samples';
 import type { SampleResume } from '@/data/samples';
+import { useSettingsStore } from '@/stores/settings';
 import AppIcon from './AppIcon.vue';
+
+const settings = useSettingsStore();
 
 defineEmits<{
   (e: 'new'): void;
   (e: 'open'): void;
   (e: 'sample', sample: SampleResume): void;
+  /** 打开 AI 设置弹窗（App 层接线） */
+  (e: 'configure-ai'): void;
 }>();
+
+const aiReady = computed(() => settings.aiReady);
 </script>
 
 <template>
@@ -61,6 +69,33 @@ defineEmits<{
       <p class="privacy">
         <AppIcon name="shield" /> 示例为虚构人物，仅用于演示排版效果
       </p>
+    </section>
+
+    <section class="ai-boost">
+      <div class="ai-boost-head">
+        <h2><AppIcon name="sparkles" /> AI 能力（可选，自带 Key）</h2>
+        <span v-if="aiReady" class="ai-ready-badge"><AppIcon name="shield" /> AI 已启用</span>
+      </div>
+      <div class="ai-boost-grid">
+        <div class="ai-boost-item">
+          <strong>AI 解析旧简历</strong>
+          <span>PDF / Word 导入识别更准，字段逐条核对后入库</span>
+        </div>
+        <div class="ai-boost-item">
+          <strong>简历优化工程师</strong>
+          <span>粘贴岗位 JD，访谈你的真实经历，产出定制提案——AI 只整理你说过的素材，绝不编造</span>
+        </div>
+        <div class="ai-boost-item">
+          <strong>AI 聊天助手</strong>
+          <span>对话式改简历：提案卡片逐条采纳，Ctrl+Z 可撤销</span>
+        </div>
+      </div>
+      <div class="ai-boost-actions">
+        <button v-if="!aiReady" class="btn primary" @click="$emit('configure-ai')">
+          <AppIcon name="cogs" /> 配置 AI（DeepSeek / OpenAI 兼容 / Ollama）
+        </button>
+        <span class="ai-boost-hint">配置前零网络请求；Key 只存本地浏览器，按次计费在你的服务商账户</span>
+      </div>
     </section>
   </div>
 </template>
@@ -118,6 +153,30 @@ defineEmits<{
   min-width: 120px;
 }
 .features span { color: #7b8a9c; }
+
+.ai-boost {
+  background: #faf5ff; border: 1px solid #e5d5f7; border-radius: 16px;
+  padding: 26px; box-shadow: 0 12px 40px rgba(114, 46, 209, 0.08);
+}
+.ai-boost-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ai-boost-head h2 {
+  margin: 0 0 6px; font-size: 18px; color: #4a2a7a;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ai-ready-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 12px;
+  background: #f6ffed; color: #389e0d; font-size: 11px; font-weight: 600;
+}
+.ai-boost-grid { display: grid; gap: 12px; margin: 14px 0; }
+.ai-boost-item {
+  display: grid; gap: 2px; padding: 10px 14px;
+  background: #fff; border: 1px solid #efdbff; border-radius: 10px;
+}
+.ai-boost-item strong { font-size: 13px; color: #10233b; }
+.ai-boost-item span { font-size: 12px; color: #7b8a9c; line-height: 1.6; }
+.ai-boost-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ai-boost-hint { font-size: 11px; color: #9aa7b6; line-height: 1.6; }
 
 .samples {
   background: #fff; border: 1px solid #e6ebf2; border-radius: 16px;

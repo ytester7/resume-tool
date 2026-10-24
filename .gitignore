@@ -11,6 +11,9 @@ docs/superpowers/
 # === AI 助手本地数据（记忆目录，不入库） ===
 .workbuddy/
 
+# === MCP 伴随进程本地数据（登录态/浏览器/日志，收敛在项目内但绝不入库） ===
+.mcp/
+
 # === Node.js / 包管理 ===
 node_modules/
 npm-debug.log*

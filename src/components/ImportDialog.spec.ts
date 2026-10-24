@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { setActivePinia, createPinia } from 'pinia';
 import ImportDialog from './ImportDialog.vue';
 import { parseResumeText } from '@/utils/importText';
+import { SETTINGS_STORAGE_KEY } from '@/types/settings';
 import type { ResumeImportDraft } from '@/types/import';
 
 const text = `陈默
@@ -36,6 +38,11 @@ function makeDraft(overrides: Partial<ResumeImportDraft> = {}): ResumeImportDraf
 }
 
 describe('ImportDialog', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setActivePinia(createPinia());
+  });
+
   it('展示文件信息、识别结果与统计', () => {
     const wrapper = mount(ImportDialog, { props: { draft: makeDraft() } });
     expect(wrapper.find('.import-file').text()).toContain('resume.pdf');
@@ -69,6 +76,30 @@ describe('ImportDialog', () => {
     const wrapper = mount(ImportDialog, { props: { draft: makeDraft() } });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(wrapper.emitted('cancel')).toBeTruthy();
+    wrapper.unmount();
+  });
+
+  it('未配置 AI 时不显示 AI 解析按钮，隐私文案为纯本地表述', () => {
+    const wrapper = mount(ImportDialog, { props: { draft: makeDraft() } });
+    expect(wrapper.find('.btn-ai').exists()).toBe(false);
+    expect(wrapper.find('.hint').text()).toContain('不会上传到任何服务器');
+    wrapper.unmount();
+  });
+
+  it('配置 AI 后出现解析按钮，点击抛出 ai-reparse；AI 草稿显示徽标', async () => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      ai: { provider: 'deepseek', baseURL: 'https://api.deepseek.com/v1', apiKey: 'sk-x', model: 'deepseek-chat' },
+    }));
+    const wrapper = mount(ImportDialog, { props: { draft: makeDraft({ aiAssisted: true }) } });
+
+    const btn = wrapper.find('.btn-ai');
+    expect(btn.exists()).toBe(true);
+    expect(btn.text()).toContain('再解析一次');
+    expect(wrapper.find('.ai-badge').exists()).toBe(true);
+    expect(wrapper.find('.hint').text()).toContain('发送给你配置的服务商');
+
+    await btn.trigger('click');
+    expect(wrapper.emitted('ai-reparse')).toBeTruthy();
     wrapper.unmount();
   });
 });
