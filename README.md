@@ -28,16 +28,17 @@ https://<你的用户名>.github.io/resume-tool/
 | 4 | A4 分页预览 | 210mm 页宽 + 297mm 分页线 + 实时页数，超过 2 页会提示精简 |
 | 5 | 可选中文字的 PDF | 浏览器打印通道输出矢量文字，ATS 可解析；html2pdf 作为兼容模式保留 |
 | 6 | Word（.docx）导出 | 单栏、可编辑，适配国内投递系统 |
-| 7 | 岗位 JD 匹配 | 粘贴 JD，本地抽取关键词并计算覆盖率，列出「JD 提到但简历没写」的技能 |
+| 7 | 岗位 JD 匹配 | 粘贴 JD，本地抽取关键词并计算覆盖率，列出「JD 提到但简历没写」的技能；可选 AI 深度分析（语义缺口 + 定位到区块的修改建议，本地匹配分保持免费） |
 | 8 | 简历健康度 | 5 维 100 分 + 可点击定位的改进建议 |
 | 9 | 撤销 / 重做 | 每个 Tab 独立快照栈（最多 40 步），Ctrl+Z / Ctrl+Shift+Z |
 | 10 | 多 Tab 会话 | 类 IDE 多 Tab，标题跟随姓名，重复打开同一文件会自动切换 |
 | 11 | 三级拖拽排序 | 区块级 + 列表项级 + 工作内容子项级 |
 | 12 | 证件照 | 上传后自动按 3:4 居中裁剪压缩，Executive / QA专业 / 科技渐变 三套模板已支持 |
 | 13 | 自动保存 + 崩溃恢复 | localStorage 兜底，刷新/崩溃后启动时恢复「孤儿 Tab」 |
-| 14 | 本地优先 | 业务代码零网络请求；导入解析、JD 匹配与健康度全部本地计算 |
-| 15 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
-| 16 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |
+| 14 | AI 能力（可选，自带 Key） | 工具栏齿轮配置 DeepSeek / OpenAI 兼容 / OpenRouter / OpenAI / Ollama 后解锁：旧简历 AI 解析、JD 深度分析、单条经历润色（强化动词 / 突出成果 / 精简 / 自定义） |
+| 15 | 本地优先 | **未配置 AI 时业务代码零网络请求**；导入解析、JD 关键词匹配与健康度全部本地计算；AI 仅在点击对应按钮时把你可见的文本发给你自己配置的服务商，Key 只存本地浏览器 |
+| 16 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
+| 17 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |
 
 ## 技术栈
 
@@ -50,6 +51,7 @@ https://<你的用户名>.github.io/resume-tool/
 | 拖拽 | vuedraggable |
 | 导入 | pdfjs-dist（PDF 文本层）、mammoth（Word） |
 | 导出 | 浏览器打印（文本 PDF）、html2pdf.js（图片 PDF）、docx（Word） |
+| AI（可选） | 浏览器直连 OpenAI 兼容协议（fetch 实现，无 SDK 依赖），zod 校验模型输出 |
 | 测试 | Vitest + @vue/test-utils + jsdom、Playwright |
 | 质量 | vue-tsc、ESLint、GitHub Actions |
 

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import { useFileSystemStore } from '@/stores/fileSystem';
 import { useUiStore } from '@/stores/ui';
+import { useSettingsStore } from '@/stores/settings';
 import { useAutoSave } from '@/composables/useAutoSave';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useStartupRecovery } from '@/composables/useStartupRecovery';
@@ -12,6 +13,7 @@ import { useDocxExport } from '@/composables/useDocxExport';
 import { useUndoHistory } from '@/composables/useUndoHistory';
 import { serializeResume } from '@/utils/parseResume';
 import { importResumeFile } from '@/utils/importFile';
+import { aiParseResumeText } from '@/utils/ai/importParse';
 import { sanitizeFilename } from '@/utils/sanitize';
 import { toErrorMessage } from '@/utils/errors';
 import type { SampleResume } from '@/data/samples';
@@ -22,12 +24,14 @@ import WelcomePanel from '@/components/WelcomePanel.vue';
 import EditorPanel from '@/components/EditorPanel.vue';
 import PreviewPanel from '@/components/PreviewPanel.vue';
 import ImportDialog from '@/components/ImportDialog.vue';
+import SettingsDialog from '@/components/SettingsDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
 
 const tabs = useTabsStore();
 const fs = useFileSystemStore();
 const ui = useUiStore();
+const settings = useSettingsStore();
 const { recoverOrphanedTabs } = useStartupRecovery();
 const { exportActiveToPdf } = usePdfExport();
 const { printResume } = usePrintExport();
@@ -38,6 +42,24 @@ const mobileView = ref<'edit' | 'preview'>('edit');
 const hasTabs = computed(() => tabs.tabs.length > 0);
 const importDraft = ref<ResumeImportDraft | null>(null);
 const importing = ref(false);
+const settingsOpen = ref(false);
+const aiReparsing = ref(false);
+
+/** 导入确认弹窗内点击「AI 智能解析」：用 AI 重解析原文并替换当前草稿 */
+async function onAiReparse() {
+  const draft = importDraft.value;
+  const config = settings.requireAiConfig();
+  if (!draft || !config || aiReparsing.value) return;
+  aiReparsing.value = true;
+  try {
+    importDraft.value = await aiParseResumeText(config, draft);
+    ui.toastSuccess('AI 解析完成，请核对识别结果');
+  } catch (e) {
+    ui.toastError(toErrorMessage(e));
+  } finally {
+    aiReparsing.value = false;
+  }
+}
 
 useAutoSave();
 
@@ -248,6 +270,8 @@ onMounted(async () => {
       :can-undo="canUndo"
       :can-redo="canRedo"
       :has-tab="hasTabs"
+      :on-open-settings="() => (settingsOpen = true)"
+      :ai-ready="settings.aiReady"
     />
 
     <template v-if="hasTabs">
@@ -290,9 +314,13 @@ onMounted(async () => {
     <ImportDialog
       v-if="importDraft"
       :draft="importDraft"
+      :ai-reparsing="aiReparsing"
       @confirm="confirmImport"
       @cancel="cancelImport"
+      @ai-reparse="onAiReparse"
     />
+
+    <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
 
     <ConfirmDialog />
     <Toast />

@@ -5,6 +5,26 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- **AI 设置（BYOK）**：工具栏新增设置齿轮，弹窗内配置 AI 服务商（DeepSeek / OpenAI 兼容接口 / OpenRouter / OpenAI / Ollama 本地模型），
+  支持连接测试（测试通过才可保存）、Key 脱敏回显与一键清除；配置只存本地 localStorage（`resume_tool_settings_v1`）。
+- **AI 解析导入**：导入确认弹窗内新增「AI 智能解析」，把原文交给用户配置的模型做严格抽取（绝不推断、不确定留空），
+  返回与本地解析同一份草稿契约，弹窗无差别复用；AI 结果带「请核对」警示与徽标。
+- **JD 深度分析**：岗位匹配卡片新增「AI 深度分析」，产出语义缺口、优势与可点击定位到区块的修改建议；
+  本地关键词匹配分保持免费且仍是唯一数字结论（AI 不出分数）。
+- **单条润色**：工作/项目经历条目行新增 AI 按钮，提供强化动词 / 突出成果 / 精简 / 自定义指令四种改写；
+  输出契约 `{text, why, addsFacts}`，新增事实会提示核对；应用前校验原文未变，替换写入正常数据流（可撤销）。
+- AI 基础设施：`utils/ai/`（client / providers / prompt / importParse / jdAnalysis / improve）、`stores/settings.ts`、`SettingsDialog.vue`、`AiImproveButton.vue`；
+  新增依赖 zod 用于校验模型输出；提示词移植自 Reactive Resume 的安全结构（安全前缀、数据块防注入、输出契约约束）。
+
+### Changed
+
+- 隐私承诺更新：README 功能表与导入/JD 弹窗文案由「零网络请求」调整为「未配置 AI 时零网络请求」；
+  AI 相关按钮在未配置时不出现，所有 AI 调用均由用户显式点击触发。
+
 ## [2.3.0] - 2026-10-18
 
 ### Added

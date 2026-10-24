@@ -16,6 +16,7 @@ function makeProps(overrides: Record<string, unknown> = {}) {
     canUndo: false,
     canRedo: false,
     hasTab: true,
+    onOpenSettings: vi.fn(),
     ...overrides,
   };
 }
