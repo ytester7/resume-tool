@@ -13,6 +13,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { useTabsStore } from '@/stores/tabs';
 import { useUiStore } from '@/stores/ui';
+import { useMaterialsStore } from '@/stores/materials';
 import { analyzeGaps, collectMaterial, generateOptimizerProposals } from '@/utils/ai/optimizer';
 import type { OptimizerAnalysis, OptimizerGap, OptimizerMaterial } from '@/utils/ai/optimizer';
 import { applyProposal } from '@/utils/ai/proposals';
@@ -38,6 +39,10 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 const settings = useSettingsStore();
 const tabs = useTabsStore();
 const ui = useUiStore();
+const materials = useMaterialsStore();
+
+/** 素材库折叠区开关 */
+const libraryOpen = ref(false);
 
 type Step = 'confirm' | 'analysis' | 'interview' | 'proposals';
 
@@ -142,6 +147,10 @@ async function submitAnswer(gap: OptimizerGap): Promise<void> {
       s.enough = true;
       s.material = result.material;
       s.followUp = undefined;
+      // 沉淀进个人素材库：换岗位可直接带入，不必重答
+      if (!result.material.includes('（用户无相关经验）')) {
+        materials.upsert(gap.topic, result.material);
+      }
     } else if (result.followUp) {
       s.followUp = result.followUp;
       s.followUpAnswer = '';
@@ -155,6 +164,16 @@ async function submitAnswer(gap: OptimizerGap): Promise<void> {
   } finally {
     s.submitting = false;
   }
+}
+
+/** 从素材库带入：把既有素材填进回答框（用户过目后仍需手动提交，保持人在环） */
+function fillFromLibrary(gap: OptimizerGap): void {
+  const hit = materials.findByTopic(gap.topic);
+  if (!hit) return;
+  const s = gapState(gap);
+  if (s.followUp) s.followUpAnswer = hit.material;
+  else s.answer = hit.material;
+  ui.toastInfo(`已带入「${hit.topic}」的素材，请核对后提交`);
 }
 
 function skipGap(gap: OptimizerGap): void {
@@ -305,6 +324,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
                   />
                   <div class="opt-actions-row">
                     <button
+                      v-if="materials.findByTopic(gap.topic)"
+                      class="opt-btn library-btn"
+                      type="button"
+                      :title="`素材库里有「${materials.findByTopic(gap.topic)!.topic}」的记录，点击带入后仍需你核对提交`"
+                      @click="fillFromLibrary(gap)"
+                    >从素材库带入</button>
+                    <button
                       class="opt-btn primary"
                       type="button"
                       :disabled="gapState(gap).submitting"
@@ -321,6 +347,21 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
                 </p>
               </template>
             </div>
+
+            <!-- 个人素材库：跨岗位复用的真实经历 -->
+            <details class="opt-library" :open="libraryOpen" @toggle="libraryOpen = ($event.target as HTMLDetailsElement).open">
+              <summary class="opt-library-head">我的素材库（{{ materials.entries.length }}）<span class="opt-hint inline">访谈沉淀的真实经历，新岗位可直接带入</span></summary>
+              <div v-if="materials.entries.length" class="opt-library-list">
+                <div v-for="m in materials.entries" :key="m.id" class="opt-library-item">
+                  <div class="opt-library-meta">
+                    <span class="opt-library-topic">{{ m.topic }}</span>
+                    <button class="opt-btn tiny danger" type="button" :aria-label="`删除素材 ${m.topic}`" @click="materials.remove(m.id)">删除</button>
+                  </div>
+                  <p class="opt-library-text">{{ m.material }}</p>
+                </div>
+              </div>
+              <p v-else class="opt-hint inline">暂无素材；完成一次访谈后会自动沉淀到这里。</p>
+            </details>
 
             <div class="opt-actions-row footer">
               <span class="opt-hint">{{ answeredMaterials.length }} 条素材已就绪</span>
@@ -437,6 +478,25 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
   margin: 0; padding: 6px 8px; border-radius: 4px;
   background: #f6ffed; color: #389e0d; font-size: 11px; line-height: 1.6;
 }
+.library-btn { border-color: #b37feb; color: #722ed1; }
+.library-btn:hover { background: #f9f0ff; }
+.opt-library { border: 1px dashed #d3adf7; border-radius: 8px; padding: 8px 12px; }
+.opt-library-head {
+  cursor: pointer; font-size: 12px; font-weight: 600; color: #5a3a8a;
+  list-style: none; user-select: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.opt-library-head::-webkit-details-marker { display: none; }
+.opt-library-head::before { content: '▸'; font-size: 10px; }
+.opt-library[open] .opt-library-head::before { content: '▾'; }
+.opt-hint.inline { flex: 1; font-weight: 400; }
+.opt-library-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.opt-library-item { padding: 6px 8px; background: #faf5ff; border-radius: 6px; }
+.opt-library-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.opt-library-topic { font-size: 11px; font-weight: 600; color: #722ed1; }
+.opt-library-text { margin: 4px 0 0; font-size: 11px; color: #4a3a66; line-height: 1.6; }
+.opt-btn.tiny { padding: 2px 8px; font-size: 10px; }
+.opt-btn.tiny.danger { color: #ff4d4f; border-color: #ffccc7; }
+.opt-btn.tiny.danger:hover { background: #fff2f0; }
 .proposal-list { display: flex; flex-direction: column; gap: 8px; }
 
 @media (max-width: 767px) {

@@ -53,7 +53,7 @@ const MAX_HISTORY_TURNS = 6;
 
 export async function chatWithAssistant(
   config: AiProviderConfig,
-  opts: { request: string; history: ChatTurn[]; data: ResumeData; jd?: string },
+  opts: { request: string; history: ChatTurn[]; data: ResumeData; jd?: string; materials?: { topic: string; material: string }[] },
 ): Promise<AssistantTurn> {
   const request = opts.request.trim();
   if (!request) throw new Error('请输入你的要求');
@@ -62,6 +62,15 @@ export async function chatWithAssistant(
   const catalog = formatPassageCatalog(passages);
   const jdBlock = opts.jd?.trim()
     ? `\n\n目标岗位 JD（用户已保存，供参考）：\n${dataBlock('JD_TEXT', opts.jd.trim().slice(0, 4000))}`
+    : '';
+  // 个人素材库：用户访谈沉淀的真实经历，最近的少量附带（总量限幅）
+  const materialsText = (opts.materials ?? [])
+    .slice(0, 10)
+    .map((m) => `【${m.topic}】${m.material}`)
+    .join('\n')
+    .slice(0, 4000);
+  const materialBlock = materialsText
+    ? `\n\n用户素材库（用户真实经历，引用其中的内容不算编造，但不得添加其中没有的事实）：\n${dataBlock('MATERIALS', materialsText)}`
     : '';
 
   const history = opts.history.slice(-MAX_HISTORY_TURNS).map((t) => ({
@@ -74,7 +83,7 @@ export async function chatWithAssistant(
     ...history,
     {
       role: 'user',
-      content: `${dataBlock('REQUEST', request)}\n\n简历段落目录：\n${dataBlock('CATALOG', catalog)}${jdBlock}`,
+      content: `${dataBlock('REQUEST', request)}\n\n简历段落目录：\n${dataBlock('CATALOG', catalog)}${jdBlock}${materialBlock}`,
     },
   ], { timeoutMs: 120_000 });
 

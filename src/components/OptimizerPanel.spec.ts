@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import OptimizerPanel from './OptimizerPanel.vue';
 import { useTabsStore } from '@/stores/tabs';
+import { useMaterialsStore } from '@/stores/materials';
 import { SETTINGS_STORAGE_KEY } from '@/types/settings';
 import { defaultResumeData } from '@/types/resume';
 import type { ResumeData } from '@/types/resume';
@@ -194,6 +195,63 @@ describe('OptimizerPanel', () => {
 
     expect(generateMock.mock.calls[0][1].materials).toEqual([]);
     expect(wrapper.find('.proposal-card').exists()).toBe(true);
+  });
+
+  it('访谈成功的素材自动沉淀进素材库；可带入到相近差距的回答框', async () => {
+    gapsMock.mockResolvedValueOnce({
+      summary: 's', strengths: [],
+      gaps: [{ id: 'g1', topic: 'Kubernetes 实践', kind: 'needs-material', question: '用过吗？' }],
+    });
+    materialMock.mockResolvedValueOnce({ enough: true, material: '在 A 项目用 K8s 部署 3 个服务' });
+
+    const wrapper = mountPanel({ presetJd: JD });
+    await wrapper.find('.opt-btn.primary').trigger('click');
+    await flushPromises();
+
+    await wrapper.find('.opt-answer-row textarea').setValue('在 A 项目用过');
+    await wrapper.findAll('.opt-btn').find((b) => b.text() === '提交')!.trigger('click');
+    await flushPromises();
+
+    // 自动入库
+    const materials = useMaterialsStore();
+    expect(materials.entries).toHaveLength(1);
+    expect(materials.entries[0].topic).toBe('Kubernetes 实践');
+    expect(wrapper.find('.opt-library-head').text()).toContain('1');
+
+    // 第二次访谈相近差距：出现「从素材库带入」，点击填入回答框
+    gapsMock.mockResolvedValueOnce({
+      summary: 's2', strengths: [],
+      gaps: [{ id: 'g1', topic: 'Kubernetes 集群运维', kind: 'needs-material', question: '接触过吗？' }],
+    });
+    await wrapper.findAll('.opt-btn').find((b) => b.text() === '重新分析')!.trigger('click');
+    await wrapper.findAll('.opt-btn').find((b) => b.text().includes('开始差距分析'))!.trigger('click');
+    await flushPromises();
+
+    const fillBtn = wrapper.findAll('.opt-btn').find((b) => b.text() === '从素材库带入')!;
+    expect(fillBtn.exists()).toBe(true);
+    await fillBtn.trigger('click');
+
+    const textarea = wrapper.find('.opt-answer-row textarea').element as HTMLTextAreaElement;
+    expect(textarea.value).toContain('K8s 部署 3 个服务');
+    wrapper.unmount();
+  });
+
+  it('「用户无相关经验」的素材不入库', async () => {
+    gapsMock.mockResolvedValueOnce({
+      summary: 's', strengths: [],
+      gaps: [{ id: 'g1', topic: '性能测试', kind: 'needs-material', question: 'q' }],
+    });
+    materialMock.mockResolvedValueOnce({ enough: true, material: '（用户无相关经验）' });
+
+    const wrapper = mountPanel({ presetJd: JD });
+    await wrapper.find('.opt-btn.primary').trigger('click');
+    await flushPromises();
+    await wrapper.find('.opt-answer-row textarea').setValue('没接触过');
+    await wrapper.findAll('.opt-btn').find((b) => b.text() === '提交')!.trigger('click');
+    await flushPromises();
+
+    expect(useMaterialsStore().entries).toHaveLength(0);
+    wrapper.unmount();
   });
 
   it('未配置 AI 时（aiReady=false）各 AI 调用直接返回不崩', async () => {

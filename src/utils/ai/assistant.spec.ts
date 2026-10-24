@@ -94,6 +94,21 @@ describe('chatWithAssistant', () => {
     expect(chatMock).not.toHaveBeenCalled();
   });
 
+  it('个人素材库作为数据块附带，且注明不得添加库中没有的事实', async () => {
+    chatMock.mockResolvedValueOnce(JSON.stringify({ reply: 'ok', proposals: [] }));
+    await chatWithAssistant(config, {
+      request: '把之前说的 K8s 经历用进来',
+      history: [],
+      data: makeData(),
+      materials: [{ topic: 'Kubernetes 实践', material: '在 A 项目用 K8s 部署 3 个服务' }],
+    });
+    const messages = chatMock.mock.calls[0][1];
+    const last = messages[messages.length - 1].content as string;
+    expect(last).toContain('<<<MATERIALS_START>>>');
+    expect(last).toContain('K8s 部署 3 个服务');
+    expect(last).toContain('不得添加其中没有的事实');
+  });
+
   it('模型虚构的 passageId 落为 stale 而不是报错', async () => {
     chatMock.mockResolvedValueOnce(JSON.stringify({
       reply: '已提出修改',

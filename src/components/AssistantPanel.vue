@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useSettingsStore } from '@/stores/settings';
 import { useTabsStore } from '@/stores/tabs';
 import { useUiStore } from '@/stores/ui';
+import { useMaterialsStore } from '@/stores/materials';
 import { chatWithAssistant } from '@/utils/ai/assistant';
 import type { ChatTurn } from '@/utils/ai/assistant';
 import { applyProposal } from '@/utils/ai/proposals';
@@ -26,6 +27,7 @@ interface Message {
 const settings = useSettingsStore();
 const tabs = useTabsStore();
 const ui = useUiStore();
+const materials = useMaterialsStore();
 
 const open = ref(false);
 const input = ref('');
@@ -124,6 +126,7 @@ async function send(preset?: string): Promise<void> {
       history,
       data: tab.data,
       jd: tab.targetJd || undefined,
+      materials: materials.entries.map((m) => ({ topic: m.topic, material: m.material })),
     });
     messages.value.push({
       id: ++msgId,
