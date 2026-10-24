@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { AiProviderConfig } from '@/types/settings';
 import type { ResumeData } from '@/types/resume';
-import { chatCompletion, parseWithSchema } from './client';
+import { chatCompletion, chatCompletionStream, parseWithSchema } from './client';
 import { JSON_ONLY_CONTRACT, SAFETY_SYSTEM, dataBlock } from './prompt';
 import { collectPassages, formatPassageCatalog, resolveProposals } from './proposals';
 import type { ResolvedProposal } from './proposals';
@@ -53,7 +53,15 @@ const MAX_HISTORY_TURNS = 6;
 
 export async function chatWithAssistant(
   config: AiProviderConfig,
-  opts: { request: string; history: ChatTurn[]; data: ResumeData; jd?: string; materials?: { topic: string; material: string }[] },
+  opts: {
+    request: string;
+    history: ChatTurn[];
+    data: ResumeData;
+    jd?: string;
+    materials?: { topic: string; material: string }[];
+    /** 提供时走流式：reply 增量逐步回调，完整文本仍整体返回 */
+    onReplyDelta?: (delta: string) => void;
+  },
 ): Promise<AssistantTurn> {
   const request = opts.request.trim();
   if (!request) throw new Error('请输入你的要求');
@@ -78,14 +86,18 @@ export async function chatWithAssistant(
     content: t.content,
   }));
 
-  const raw = await chatCompletion(config, [
-    { role: 'system', content: SYSTEM_PROMPT },
+  const messages = [
+    { role: 'system' as const, content: SYSTEM_PROMPT },
     ...history,
     {
-      role: 'user',
+      role: 'user' as const,
       content: `${dataBlock('REQUEST', request)}\n\n简历段落目录：\n${dataBlock('CATALOG', catalog)}${jdBlock}${materialBlock}`,
     },
-  ], { timeoutMs: 120_000 });
+  ];
+
+  const raw = opts.onReplyDelta
+    ? await chatCompletionStream(config, messages, { timeoutMs: 120_000, onDelta: opts.onReplyDelta })
+    : await chatCompletion(config, messages, { timeoutMs: 120_000 });
 
   const parsed = parseWithSchema(raw, turnSchema);
   return {

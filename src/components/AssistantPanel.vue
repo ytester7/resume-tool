@@ -22,6 +22,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   proposals?: UiProposal[];
+  /** 流式进行中：仅展示文本，结束后由完整 reply 覆盖并附提案 */
+  streaming?: boolean;
 }
 
 const settings = useSettingsStore();
@@ -45,6 +47,9 @@ const MAX_PERSIST_BYTES = 256 * 1024;
 const suggestions = ['把工作经历改得更量化', '精简专业概述', '根据目标 JD 优化技能描述'];
 
 const empty = computed(() => messages.value.length === 0);
+
+/** 流式文本已开始上屏时不再显示“思考中”转圈 */
+const streamingHasText = computed(() => messages.value.some((m) => m.streaming && m.content));
 
 function storageKey(tabId: string): string {
   return STORAGE_KEY_PREFIX + tabId;
@@ -117,6 +122,9 @@ async function send(preset?: string): Promise<void> {
   input.value = '';
   const history: ChatTurn[] = messages.value.map((m) => ({ role: m.role, content: m.content }));
   messages.value.push({ id: ++msgId, role: 'user', content: request });
+  // 占位消息：流式增量写入 content，完成后被完整 reply 覆盖
+  const placeholder: Message = { id: ++msgId, role: 'assistant', content: '', streaming: true };
+  messages.value.push(placeholder);
   loading.value = true;
   await scrollToEnd();
 
@@ -127,18 +135,20 @@ async function send(preset?: string): Promise<void> {
       data: tab.data,
       jd: tab.targetJd || undefined,
       materials: materials.entries.map((m) => ({ topic: m.topic, material: m.material })),
+      onReplyDelta: (delta) => {
+        placeholder.content += delta;
+        const el = listEl.value;
+        if (el) el.scrollTop = el.scrollHeight;
+      },
     });
-    messages.value.push({
-      id: ++msgId,
-      role: 'assistant',
-      content: turn.reply,
-      proposals: turn.proposals
-        .filter((p) => p.status !== 'duplicate' && p.status !== 'no-change')
-        .map((p) => ({ ...p, ui: 'idle' as const })),
-    });
+    placeholder.content = turn.reply;
+    placeholder.proposals = turn.proposals
+      .filter((p) => p.status !== 'duplicate' && p.status !== 'no-change')
+      .map((p) => ({ ...p, ui: 'idle' as const }));
   } catch (e) {
-    messages.value.push({ id: ++msgId, role: 'assistant', content: `出错了：${toErrorMessage(e)}` });
+    placeholder.content = `出错了：${toErrorMessage(e)}`;
   } finally {
+    placeholder.streaming = false;
     loading.value = false;
     persist();
     await scrollToEnd();
@@ -239,7 +249,7 @@ onMounted(scrollToEnd);
         </div>
 
         <template v-for="m in messages" :key="m.id">
-          <div class="msg" :class="m.role">
+          <div class="msg" :class="[m.role, { streaming: m.streaming }]">
             <p class="msg-text">{{ m.content }}</p>
           </div>
 
@@ -254,7 +264,7 @@ onMounted(scrollToEnd);
           </div>
         </template>
 
-        <div v-if="loading" class="msg assistant loading-msg">
+        <div v-if="loading && !streamingHasText" class="msg assistant loading-msg">
           <AppIcon name="spinner" class="spin" /> AI 思考中…
         </div>
       </div>
@@ -344,6 +354,8 @@ onMounted(scrollToEnd);
   border-bottom-left-radius: 3px;
 }
 .msg-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.msg.streaming .msg-text::after { content: '▌'; color: #722ed1; animation: blink 1s step-start infinite; }
+@keyframes blink { 50% { opacity: 0; } }
 .loading-msg {
   display: inline-flex; align-items: center; gap: 6px; color: #999;
 }

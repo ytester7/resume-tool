@@ -89,3 +89,35 @@ test('未配置 AI 时不渲染助手入口', async ({ page }) => {
   await startWithSample(page);
   await expect(page.locator('.assistant-fab, .assistant-panel')).toHaveCount(0);
 });
+
+test('AI 助手：流式响应逐步上屏并附提案', async ({ page }) => {
+  await page.addInitScript((config) => {
+    localStorage.setItem('resume_tool_settings_v1', JSON.stringify(config));
+  }, AI_CONFIG);
+
+  // SSE 流：reply 分三块到达，最后附 proposals 并闭合 JSON
+  await page.route('**/chat/completions', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        'data: {"choices":[{"delta":{"content":"{\\"reply\\":\\"我来"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"帮你强化这段经历"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"，请确认。\\""}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":",\\"proposals\\":[]}"}}]}\n\n',
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
+      ].join(''),
+    });
+  });
+  await startWithSample(page);
+
+  await page.locator('.assistant-fab').click();
+  await page.locator('.panel-input').fill('帮我强化经历');
+  await page.locator('.send-btn').click();
+
+  // 最终消息 = 完整 reply（流式期间为增量文本，结束后覆盖为权威值）
+  const lastMsg = page.locator('.msg.assistant .msg-text').last();
+  await expect(lastMsg).toHaveText('我来帮你强化这段经历，请确认。');
+  // 流式结束后不再显示光标
+  await expect(page.locator('.msg.streaming')).toHaveCount(0);
+});
