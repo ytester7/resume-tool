@@ -40,7 +40,7 @@ async function getContext() {
 
 export async function closeBrowser() {
   if (context) {
-    await context.close().catch(() => {});
+    await context.close().catch(() => undefined);
     context = null;
     logLine('browser context closed');
   }
@@ -50,7 +50,7 @@ export async function closeBrowser() {
 export async function openLoginBrowser() {
   const ctx = await getContext();
   const page = ctx.pages()[0] ?? await ctx.newPage();
-  await page.goto(ZHIPIN_HOME, { waitUntil: 'domcontentloaded' }).catch(() => {});
+  await page.goto(ZHIPIN_HOME, { waitUntil: 'domcontentloaded' }).catch(() => undefined);
   return { ok: true, hint: '请在打开的浏览器窗口里完成登录；登录态只保存在项目 .mcp/browser-profile 目录' };
 }
 
@@ -88,7 +88,7 @@ export async function fetchJd(url) {
     const detail = parseJobDetail(html);
     if (!detail.jd && !detail.company) {
       // DOM 可能未渲染完，等待关键节点再取一次
-      await page.waitForSelector('.job-sec-text, [class*=job-detail]', { timeout: 10_000 }).catch(() => {});
+      await page.waitForSelector('.job-sec-text, [class*=job-detail]', { timeout: 10_000 }).catch(() => undefined);
       const retryHtml = await page.content();
       const retryState = detectPageState({ url: page.url(), title: await page.title(), html: retryHtml });
       if (retryState.kind !== 'none') throw riskError(retryState.kind);
@@ -114,7 +114,7 @@ export async function searchJobs({ query, city = '全国', page = 1 }) {
   return withThrottledPage(async (pg) => {
     await pg.goto(url, { waitUntil: 'domcontentloaded' });
     assertPageSafe(pg);
-    await pg.waitForSelector('.job-card-wrapper, .job-list-box', { timeout: 12_000 }).catch(() => {});
+    await pg.waitForSelector('.job-card-wrapper, .job-list-box', { timeout: 12_000 }).catch(() => undefined);
     const html = await pg.content();
     const state = detectPageState({ url: pg.url(), title: await pg.title(), html });
     if (state.kind !== 'none') throw riskError(state.kind);

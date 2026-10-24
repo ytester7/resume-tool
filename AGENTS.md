@@ -68,7 +68,7 @@ agent 的执行步骤与红线见 [.github/GIT_AGENT.md](./.github/GIT_AGENT.md)
 
 - 用户要求开 PR 时：按 [.github/GIT_WORKFLOW.md](./.github/GIT_WORKFLOW.md) 与 [.github/PULL_REQUEST_TEMPLATE.md](./.github/PULL_REQUEST_TEMPLATE.md) 执行
 - 合并默认 **Squash and merge**，PR 标题与最终 commit message 一致
-- Review 通过前必须跑通：`npx vue-tsc --noEmit` / `npx vitest run` / `npm run build` / `npx eslint src/ e2e/`
+- Review 通过前必须跑通：`npx vue-tsc --noEmit` / `npx vitest run` / `npm run build` / `npm run lint`（覆盖 src、e2e 与 mcp-server）；改到 mcp-server 时另跑 `npm run mcp:test`
 
 ### 版本与发布
 

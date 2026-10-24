@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
+import globals from 'globals';
 
 export default tseslint.config(
   // 全局忽略
@@ -60,6 +61,27 @@ export default tseslint.config(
       'vue/multiline-html-element-content-newline': 'off',
       'vue/html-closing-bracket-newline': 'off',
       'vue/html-closing-bracket-spacing': 'off',
+    },
+  },
+
+  // mcp-server（纯 ESM JavaScript，Node 运行时）：独立配置块，
+  // 不走 TS/Vue 规则，仅套基础推荐 + Node 全局
+  {
+    files: ['mcp-server/src/**/*.js', 'mcp-server/scripts/**/*.mjs', 'mcp-server/test/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        fetch: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+        RequestInit: 'readonly',
+        DOMException: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': 'warn',
     },
   },
 );
