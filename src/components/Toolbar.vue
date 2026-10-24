@@ -25,6 +25,8 @@ defineProps<{
   aiReady?: boolean;
   /** 打开投递记录面板（本地台账，无需 AI） */
   onOpenApplications: () => void;
+  /** 打开历史版本（快照）面板 */
+  onOpenSnapshots: () => void;
 }>();
 
 const exportMenu = ref<HTMLDetailsElement | null>(null);
@@ -87,6 +89,16 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
         @click="onRedo"
       >
         <AppIcon name="redo" />
+      </button>
+
+      <button
+        class="tool-btn icon-btn"
+        title="历史版本（保存即留档，可恢复）"
+        aria-label="历史版本"
+        :disabled="!hasTab"
+        @click="onOpenSnapshots"
+      >
+        <AppIcon name="clock" />
       </button>
 
       <button

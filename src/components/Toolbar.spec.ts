@@ -18,6 +18,7 @@ function makeProps(overrides: Record<string, unknown> = {}) {
     hasTab: true,
     onOpenSettings: vi.fn(),
     onOpenApplications: vi.fn(),
+    onOpenSnapshots: vi.fn(),
     ...overrides,
   };
 }

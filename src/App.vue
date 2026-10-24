@@ -4,6 +4,7 @@ import { useTabsStore } from '@/stores/tabs';
 import { useFileSystemStore } from '@/stores/fileSystem';
 import { useUiStore } from '@/stores/ui';
 import { useSettingsStore } from '@/stores/settings';
+import { useSnapshotsStore } from '@/stores/snapshots';
 import { useAutoSave } from '@/composables/useAutoSave';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useStartupRecovery } from '@/composables/useStartupRecovery';
@@ -27,6 +28,7 @@ import ImportDialog from '@/components/ImportDialog.vue';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import AssistantPanel from '@/components/AssistantPanel.vue';
 import ApplicationsPanel from '@/components/ApplicationsPanel.vue';
+import SnapshotsDialog from '@/components/SnapshotsDialog.vue';
 import OptimizerPanel from '@/components/OptimizerPanel.vue';
 import { provideOpenOptimizer } from '@/components/OptimizerPanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -35,6 +37,7 @@ import Toast from '@/components/Toast.vue';
 const tabs = useTabsStore();
 const fs = useFileSystemStore();
 const ui = useUiStore();
+const snapshots = useSnapshotsStore();
 const settings = useSettingsStore();
 const { recoverOrphanedTabs } = useStartupRecovery();
 const { exportActiveToPdf } = usePdfExport();
@@ -48,6 +51,7 @@ const importDraft = ref<ResumeImportDraft | null>(null);
 const importing = ref(false);
 const settingsOpen = ref(false);
 const applicationsOpen = ref(false);
+const snapshotsOpen = ref(false);
 const optimizerOpen = ref(false);
 const optimizerJd = ref('');
 const optimizerLabel = ref('');
@@ -209,6 +213,7 @@ async function onSave() {
   const ok = await fs.writeToFile(handle, content);
   if (ok) {
     tab.dirty = false;
+    captureSnapshotQuietly(tab, content);
     ui.toastSuccess('保存成功');
   } else {
     ui.toastError('保存失败');
@@ -235,9 +240,17 @@ async function onSaveAs() {
   if (ok) {
     tab.fileHandle = handle;
     tab.dirty = false;
+    captureSnapshotQuietly(tab, content);
     ui.toastSuccess('另存为成功');
   } else {
     ui.toastError('另存为失败');
+  }
+}
+
+/** 保存成功后留档快照；内容过大时静默跳过（不打断保存成功的提示） */
+function captureSnapshotQuietly(tab: NonNullable<typeof tabs.active>, content: string): void {
+  if (!snapshots.capture(tab, content)) {
+    ui.toastInfo('本次未留快照（内容超过 1MB）');
   }
 }
 
@@ -296,6 +309,7 @@ onMounted(async () => {
       :on-open-settings="() => (settingsOpen = true)"
       :ai-ready="settings.aiReady"
       :on-open-applications="() => (applicationsOpen = true)"
+      :on-open-snapshots="() => (snapshotsOpen = true)"
     />
 
     <template v-if="hasTabs">
@@ -351,6 +365,8 @@ onMounted(async () => {
       @close="applicationsOpen = false"
       @optimize="onOptimizeApplication"
     />
+
+    <SnapshotsDialog v-if="snapshotsOpen" @close="snapshotsOpen = false" />
 
     <OptimizerPanel
       v-if="optimizerOpen && settings.aiReady && hasTabs"
