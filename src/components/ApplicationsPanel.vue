@@ -7,6 +7,8 @@ import { useFileSystemStore } from '@/stores/fileSystem';
 import { APPLICATION_STATUSES, CHANNEL_LABELS } from '@/types/applications';
 import type { ApplicationChannel, JobApplication } from '@/types/applications';
 import { toErrorMessage } from '@/utils/errors';
+import { detectCompanion, fetchJdViaCompanion, openCompanionLogin, companionErrorCode } from '@/utils/companion';
+import type { CompanionHealth } from '@/utils/companion';
 import AppIcon from './AppIcon.vue';
 
 /**
@@ -30,6 +32,47 @@ const form = ref({
   link: '',
   jd: '',
 });
+
+// —— Boss直聘直连（可选：本地伴随进程在线时才有入口） ——
+const companion = ref<CompanionHealth | null>(null);
+const fetching = ref(false);
+
+void detectCompanion().then((health) => {
+  companion.value = health;
+});
+
+async function grabJd(): Promise<void> {
+  const url = form.value.link.trim();
+  if (!url) {
+    ui.toastWarning('请先粘贴 Boss直聘岗位链接');
+    return;
+  }
+  fetching.value = true;
+  try {
+    const job = await fetchJdViaCompanion(url);
+    form.value.company = form.value.company || job.company;
+    form.value.position = form.value.position || job.position;
+    form.value.jd = job.jd;
+    ui.toastSuccess(`已抓取「${job.company} · ${job.position}」的 JD，请核对后保存`);
+  } catch (e) {
+    if (companionErrorCode(e) === 'NEED_LOGIN') {
+      ui.toastWarning('伴随进程未登录：点击「扫码登录」后重试');
+    } else {
+      ui.toastError(toErrorMessage(e));
+    }
+  } finally {
+    fetching.value = false;
+  }
+}
+
+async function loginBrowser(): Promise<void> {
+  try {
+    await openCompanionLogin();
+    ui.toastInfo('已打开登录浏览器，扫码后回到这里重试抓取');
+  } catch (e) {
+    ui.toastError(toErrorMessage(e));
+  }
+}
 
 const funnel = computed(() => {
   const s = apps.stats;
@@ -205,6 +248,12 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
         <button class="apps-btn" type="button" @click="fileInput?.click()">导入</button>
         <button class="apps-btn" type="button" @click="exportAll">导出</button>
         <input ref="fileInput" type="file" accept=".json,application/json" class="hidden-input" @change="onImportFile" />
+        <span v-if="companion" class="companion-chip online" title="本地伴随进程（mcp-server）在线；登录态与数据都在项目 .mcp/ 目录">
+          Boss直聘直连 · 在线
+        </span>
+        <span v-else class="companion-chip" title="可选：项目内运行 npm run mcp 启动伴随进程后，可直接从岗位链接抓取 JD">
+          Boss直聘直连 · 未启动
+        </span>
       </div>
 
       <div v-if="formOpen" class="apps-form">
@@ -214,7 +263,16 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
           <select v-model="form.channel" class="apps-input" aria-label="渠道">
             <option v-for="[id, label] in CHANNEL_OPTIONS" :key="id" :value="id">{{ label }}</option>
           </select>
-          <input v-model="form.link" class="apps-input" placeholder="岗位链接（备忘，工具不会访问）" aria-label="岗位链接" />
+          <input v-model="form.link" class="apps-input" placeholder="岗位链接（Boss直聘详情页）" aria-label="岗位链接" />
+        </div>
+        <div v-if="companion" class="grab-row">
+          <button class="apps-btn grab-btn" type="button" :disabled="fetching" @click="grabJd">
+            {{ fetching ? '抓取中…' : '从链接抓取 JD' }}
+          </button>
+          <button class="apps-btn" type="button" title="首次使用先扫码登录；登录态只保存在项目 .mcp/ 目录" @click="loginBrowser">
+            扫码登录
+          </button>
+          <span class="grab-hint">经本地伴随进程抓取，窗口最小化在任务栏可见；限速运行，请勿频繁使用</span>
         </div>
         <textarea
           v-model="form.jd"
@@ -345,6 +403,19 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 .apps-btn.primary { background: #1890ff; border-color: #1890ff; color: #fff; }
 .apps-btn.primary:hover { background: #40a9ff; }
 .hidden-input { display: none; }
+
+.companion-chip {
+  margin-left: auto; align-self: center;
+  font-size: 10px; color: #b0b8c4;
+  padding: 2px 8px; border-radius: 10px;
+  background: #f5f5f5;
+}
+.companion-chip.online { color: #d4380d; background: #fff2e8; }
+.grab-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.grab-btn { border-color: #ffbb96; color: #d4380d; }
+.grab-btn:hover:not(:disabled) { background: #fff2e8; }
+.grab-btn:disabled { opacity: 0.6; cursor: wait; }
+.grab-hint { font-size: 10px; color: #b0b8c4; line-height: 1.5; }
 
 .apps-form {
   margin: 12px 20px 0; padding: 12px;

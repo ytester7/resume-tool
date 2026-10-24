@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { setActivePinia, createPinia } from 'pinia';
 import ApplicationsPanel from './ApplicationsPanel.vue';
@@ -6,10 +6,22 @@ import { useApplicationsStore } from '@/stores/applications';
 import { useTabsStore } from '@/stores/tabs';
 import { defaultResumeData } from '@/types/resume';
 
+vi.mock('@/utils/companion', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/utils/companion')>();
+  return { ...original, detectCompanion: vi.fn(), fetchJdViaCompanion: vi.fn(), openCompanionLogin: vi.fn() };
+});
+
+import { detectCompanion, fetchJdViaCompanion } from '@/utils/companion';
+const detectMock = vi.mocked(detectCompanion);
+const fetchMock = vi.mocked(fetchJdViaCompanion);
+
 describe('ApplicationsPanel', () => {
   beforeEach(() => {
     localStorage.clear();
     setActivePinia(createPinia());
+    detectMock.mockReset();
+    fetchMock.mockReset();
+    detectMock.mockResolvedValue(null);
   });
 
   function mountPanel() {
@@ -111,6 +123,42 @@ describe('ApplicationsPanel', () => {
     const notes = apps.list[0].notes;
     expect(notes[notes.length - 1].text).toBe('周三下午电话面');
     expect(wrapper.find('.note-list').text()).toContain('周三下午电话面');
+    wrapper.unmount();
+  });
+
+  it('伴随进程在线时展示直连状态与抓取入口，抓取结果回填表单', async () => {
+    detectMock.mockResolvedValue({ service: 'resume-tool-mcp', version: '0.1.0', requestsUsed: 0, requestsLimit: 60 });
+    fetchMock.mockResolvedValueOnce({
+      company: '云舟科技', position: '测试开发', salary: '25-45K',
+      jd: '负责自动化体系建设', url: 'https://www.zhipin.com/job_detail/x.html',
+    });
+
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.find('.companion-chip.online').exists()).toBe(true);
+    await wrapper.find('.apps-toolbar .apps-btn.primary').trigger('click');
+    expect(wrapper.find('.grab-row').exists()).toBe(true);
+
+    await wrapper.find('input[aria-label="岗位链接"]').setValue('https://www.zhipin.com/job_detail/x.html');
+    await wrapper.find('.grab-btn').trigger('click');
+    await flushPromises();
+
+    expect((wrapper.find('input[aria-label="公司"]').element as HTMLInputElement).value).toBe('云舟科技');
+    expect((wrapper.find('textarea[aria-label="JD 内容"]').element as HTMLTextAreaElement).value).toContain('自动化体系');
+    wrapper.unmount();
+  });
+
+  it('伴随进程不在线时不出现抓取入口，主流程不受影响', async () => {
+    detectMock.mockResolvedValue(null);
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.find('.companion-chip.online').exists()).toBe(false);
+    await wrapper.find('.apps-toolbar .apps-btn.primary').trigger('click');
+    expect(wrapper.find('.grab-row').exists()).toBe(false);
+    // 手动粘贴 JD 的主流程仍在
+    expect(wrapper.find('textarea[aria-label="JD 内容"]').exists()).toBe(true);
     wrapper.unmount();
   });
 });

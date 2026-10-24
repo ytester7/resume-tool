@@ -14,7 +14,11 @@
     "lint": "eslint src/ e2e/",
     "lint:fix": "eslint src/ e2e/ --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,css}\" \"e2e/**/*.ts\"",
-    "thumbs": "node scripts/generate-thumbs.mjs"
+    "thumbs": "node scripts/generate-thumbs.mjs",
+    "mcp:install": "npm --prefix mcp-server install && npm --prefix mcp-server run browsers:install",
+    "mcp": "node mcp-server/src/server.js",
+    "mcp:login": "node mcp-server/src/server.js --login",
+    "mcp:test": "npm --prefix mcp-server test"
   },
   "dependencies": {
     "@vueuse/core": "^10.7.0",
