@@ -50,6 +50,31 @@ Java 后端工程师
 2016.09-2020.06  华中科技大学  软件工程  本科
 `;
 
+test('欢迎页 AI 引导：点「配置 AI」打开设置弹窗', async ({ page }) => {
+  await page.route('**/chat/completions', (route: Route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ choices: [{ message: { content: '1' } }] }),
+    }),
+  );
+  await page.goto('/');
+  await expect(page.locator('.ai-boost')).toBeVisible();
+  await expect(page.locator('.ai-boost-item')).toHaveCount(3);
+
+  await page.locator('.ai-boost-actions .btn.primary').click();
+  await expect(page.locator('.settings-dialog')).toBeVisible();
+});
+
+test('欢迎页已配置 AI 时显示启用徽标', async ({ page }) => {
+  await page.addInitScript((config) => {
+    localStorage.setItem('resume_tool_settings_v1', JSON.stringify(config));
+  }, AI_CONFIG);
+  await page.goto('/');
+  await expect(page.locator('.ai-ready-badge')).toContainText('AI 已启用');
+  await expect(page.locator('.ai-boost-actions .btn.primary')).toHaveCount(0);
+});
+
 test('未配置 AI 时：所有 AI 入口隐藏，界面无网络泄漏', async ({ page }) => {
   await startWithSample(page);
 

@@ -347,6 +347,7 @@ onMounted(async () => {
       @new="onNew"
       @open="onOpen"
       @sample="onSample"
+      @configure-ai="settingsOpen = true"
     />
 
     <ImportDialog
