@@ -9,10 +9,12 @@ import type { JdAiAnalysis } from '@/utils/ai/jdAnalysis';
 import { SECTION_LABELS } from '@/types/resume';
 import type { SectionKey } from '@/types/resume';
 import { toErrorMessage } from '@/utils/errors';
+import { useOpenOptimizer } from '@/components/OptimizerPanel.vue';
 
 const tabs = useTabsStore();
 const ui = useUiStore();
 const settings = useSettingsStore();
+const openOptimizer = useOpenOptimizer();
 
 const expanded = ref(false);
 const draft = ref('');
@@ -125,6 +127,13 @@ function focusSection(target: SectionKey) {
         >
           {{ aiLoading ? 'AI 分析中…' : 'AI 深度分析' }}
         </button>
+        <button
+          v-if="settings.aiReady"
+          class="jd-btn opt-btn"
+          :disabled="!savedJd.trim()"
+          title="简历优化工程师：结合此 JD 与你的真实工作情况，访谈式收集素材后生成定制提案"
+          @click="openOptimizer(savedJd, tabs.active?.data.jobIntention || '目标岗位')"
+        >简历优化工程师</button>
         <button v-if="savedJd" class="jd-btn" @click="clear">清空</button>
         <span class="jd-hint">{{ settings.aiReady ? '关键词匹配仅本地计算；AI 分析会把 JD 与简历发给你配置的服务商' : '仅本地计算，不会上传' }}</span>
       </div>
@@ -263,6 +272,8 @@ function focusSection(target: SectionKey) {
 .jd-btn.primary:hover:not(:disabled) { background: #9254de; }
 .jd-btn.ai-btn { border-color: #d3adf7; color: #722ed1; }
 .jd-btn.ai-btn:hover:not(:disabled) { background: #f9f0ff; }
+.jd-btn.opt-btn { border-color: #b37feb; background: #722ed1; color: #fff; }
+.jd-btn.opt-btn:hover:not(:disabled) { background: #9254de; }
 .jd-hint { margin-left: auto; font-size: 10px; color: #bbb; max-width: 46%; text-align: right; }
 
 .jd-result { margin-top: 12px; }

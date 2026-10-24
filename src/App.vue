@@ -27,6 +27,8 @@ import ImportDialog from '@/components/ImportDialog.vue';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import AssistantPanel from '@/components/AssistantPanel.vue';
 import ApplicationsPanel from '@/components/ApplicationsPanel.vue';
+import OptimizerPanel from '@/components/OptimizerPanel.vue';
+import { provideOpenOptimizer } from '@/components/OptimizerPanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
 
@@ -46,6 +48,24 @@ const importDraft = ref<ResumeImportDraft | null>(null);
 const importing = ref(false);
 const settingsOpen = ref(false);
 const applicationsOpen = ref(false);
+const optimizerOpen = ref(false);
+const optimizerJd = ref('');
+const optimizerLabel = ref('');
+
+/** 深层入口（JD 匹配区等）经 provide/inject 打开简历优化工程师 */
+provideOpenOptimizer((jd: string, label: string) => {
+  optimizerJd.value = jd;
+  optimizerLabel.value = label;
+  optimizerOpen.value = true;
+});
+
+/** 投递台账入口（直接子组件，走事件；同时收起台账避免遮挡） */
+function onOptimizeApplication(jd: string, label: string) {
+  optimizerJd.value = jd;
+  optimizerLabel.value = label;
+  optimizerOpen.value = true;
+  applicationsOpen.value = false;
+}
 const aiReparsing = ref(false);
 
 /** 导入确认弹窗内点击「AI 智能解析」：用 AI 重解析原文并替换当前草稿 */
@@ -326,7 +346,18 @@ onMounted(async () => {
 
     <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
 
-    <ApplicationsPanel v-if="applicationsOpen" @close="applicationsOpen = false" />
+    <ApplicationsPanel
+      v-if="applicationsOpen"
+      @close="applicationsOpen = false"
+      @optimize="onOptimizeApplication"
+    />
+
+    <OptimizerPanel
+      v-if="optimizerOpen && settings.aiReady && hasTabs"
+      :preset-jd="optimizerJd"
+      :preset-label="optimizerLabel"
+      @close="optimizerOpen = false"
+    />
 
     <AssistantPanel v-if="settings.aiReady && hasTabs" />
 

@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useApplicationsStore } from '@/stores/applications';
 import { useTabsStore } from '@/stores/tabs';
 import { useUiStore } from '@/stores/ui';
+import { useSettingsStore } from '@/stores/settings';
 import { useFileSystemStore } from '@/stores/fileSystem';
 import { APPLICATION_STATUSES, CHANNEL_LABELS } from '@/types/applications';
 import type { ApplicationChannel, JobApplication } from '@/types/applications';
@@ -16,12 +17,19 @@ import AppIcon from './AppIcon.vue';
  * 工具不访问任何平台）。JD 粘贴捕获 + 状态流转 + 漏斗统计 +
  * 按岗位派生简历版本（多岗位版本矩阵的入口）。
  */
-const emit = defineEmits<{ (e: 'close'): void }>();
+const emit = defineEmits<{
+  (e: 'close'): void;
+  /** 打开简历优化工程师并带入该岗位 JD（App 层处理） */
+  (e: 'optimize', jd: string, label: string): void;
+}>();
 
 const apps = useApplicationsStore();
 const tabs = useTabsStore();
 const ui = useUiStore();
 const fs = useFileSystemStore();
+const settings = useSettingsStore();
+
+const aiReady = computed(() => settings.aiReady);
 
 // —— 新增表单 ——
 const formOpen = ref(false);
@@ -324,6 +332,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 
           <div class="app-card-actions">
             <button class="mini-btn" type="button" @click="analyzeJd(app)">分析 JD</button>
+            <button
+              v-if="aiReady && app.jd.trim()"
+              class="mini-btn optimize"
+              type="button"
+              title="打开简历优化工程师：结合此岗位 JD 与你的真实经历定制简历"
+              @click="emit('optimize', app.jd, `${app.company}·${app.position}`)"
+            >优化简历</button>
             <button class="mini-btn" type="button" @click="deriveVersion(app)">派生简历版本</button>
             <button class="mini-btn" type="button" @click="toggleNotes(app.id)">
               备注（{{ app.notes.length }}）
@@ -487,6 +502,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
   background: #fff; color: #555; font-size: 11px; cursor: pointer;
 }
 .mini-btn:hover { border-color: #1890ff; color: #1890ff; }
+.mini-btn.optimize { border-color: #d3adf7; color: #722ed1; }
+.mini-btn.optimize:hover { background: #f9f0ff; }
 .mini-btn.danger:hover { border-color: #ff4d4f; color: #ff4d4f; }
 
 .app-notes {
