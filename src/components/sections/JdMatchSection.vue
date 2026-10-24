@@ -36,6 +36,11 @@ watch(
   { immediate: true },
 );
 
+// 外部写入 targetJd（投递记录「分析 JD」）时同步到编辑草稿
+watch(savedJd, (v) => {
+  draft.value = v;
+});
+
 function analyze() {
   if (!tabs.active) return;
   const jd = draft.value.trim();

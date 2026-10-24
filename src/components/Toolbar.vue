@@ -23,6 +23,8 @@ defineProps<{
   onOpenSettings: () => void;
   /** AI 已配置时高亮提示 */
   aiReady?: boolean;
+  /** 打开投递记录面板（本地台账，无需 AI） */
+  onOpenApplications: () => void;
 }>();
 
 const exportMenu = ref<HTMLDetailsElement | null>(null);
@@ -85,6 +87,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
         @click="onRedo"
       >
         <AppIcon name="redo" />
+      </button>
+
+      <button
+        class="tool-btn icon-btn"
+        title="投递记录"
+        aria-label="投递记录"
+        @click="onOpenApplications"
+      >
+        <AppIcon name="briefcase" />
       </button>
 
       <details v-if="hasTab" ref="exportMenu" class="export-menu">

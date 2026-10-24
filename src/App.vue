@@ -26,6 +26,7 @@ import PreviewPanel from '@/components/PreviewPanel.vue';
 import ImportDialog from '@/components/ImportDialog.vue';
 import SettingsDialog from '@/components/SettingsDialog.vue';
 import AssistantPanel from '@/components/AssistantPanel.vue';
+import ApplicationsPanel from '@/components/ApplicationsPanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
 
@@ -44,6 +45,7 @@ const hasTabs = computed(() => tabs.tabs.length > 0);
 const importDraft = ref<ResumeImportDraft | null>(null);
 const importing = ref(false);
 const settingsOpen = ref(false);
+const applicationsOpen = ref(false);
 const aiReparsing = ref(false);
 
 /** 导入确认弹窗内点击「AI 智能解析」：用 AI 重解析原文并替换当前草稿 */
@@ -273,6 +275,7 @@ onMounted(async () => {
       :has-tab="hasTabs"
       :on-open-settings="() => (settingsOpen = true)"
       :ai-ready="settings.aiReady"
+      :on-open-applications="() => (applicationsOpen = true)"
     />
 
     <template v-if="hasTabs">
@@ -322,6 +325,8 @@ onMounted(async () => {
     />
 
     <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+
+    <ApplicationsPanel v-if="applicationsOpen" @close="applicationsOpen = false" />
 
     <AssistantPanel v-if="settings.aiReady && hasTabs" />
 
