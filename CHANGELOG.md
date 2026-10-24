@@ -5,7 +5,19 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [3.0.0] - 2026-10-24
+
+### ⚠️ 升级须知（2.x → 3.0.0）
+
+- **隐私承诺变化**：由「业务代码零网络请求」调整为「**未配置 AI 时零网络请求**」。
+  配置 AI 后，仅在点击带 AI 标识的按钮时把你可见的文本发送给你自己配置的服务商；
+  AI 入口在未配置时不出现，Key 只存本地浏览器。
+- **新增 localStorage 键**：`resume_tool_settings_v1`（AI 配置）、
+  `resume_applications_v1`（投递台账）、`resume_assistant_<tabId>`（助手对话）、
+  `resume_snapshots_v1`（版本快照）、`resume_materials_v1`（个人素材库）。
+  清除浏览器数据会一并删除这些内容，重要简历请保存为本地文件。
+- **mcp-server 为可选独立安装**（`npm run mcp:install`），不随主应用加载，
+  登录态与日志收敛在仓库 `.mcp/` 目录（已 gitignore），风险声明见其 README。
 
 ### Added
 
