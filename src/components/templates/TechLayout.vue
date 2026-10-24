@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ResumeData, SectionKey } from '@/types/resume';
+import { hasContactInfo, hasIdentity, sectionHasContent } from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import SkillList from './shared/SkillList.vue';
 import ExperienceItem from './shared/ExperienceItem.vue';
@@ -15,7 +16,7 @@ defineProps<{
 
 <template>
   <div class="tech-template">
-    <header class="resume-header">
+    <header v-if="hasIdentity(data)" class="resume-header">
       <div class="terminal-bar">
         <div class="terminal-dot red"></div>
         <div class="terminal-dot yellow"></div>
@@ -31,50 +32,49 @@ defineProps<{
           </div>
         </div>
         <div
-          v-if="data.phone || data.email || data.github || data.website"
+          v-if="hasContactInfo(data)"
           class="header-right"
         >
           <ContactItems :data="data" variant="stacked" />
         </div>
       </div>
       <div
-        v-if="data.jobIntention || data.salary || data.experienceYears"
+        v-if="data.jobIntention || data.salary"
         class="header-tags"
       >
         <span v-if="data.jobIntention" class="tag">{{ data.jobIntention }}</span>
         <span v-if="data.salary" class="tag">{{ data.salary }}</span>
-        <span v-if="data.experienceYears" class="tag">{{ data.experienceYears }}经验</span>
       </div>
     </header>
 
     <main class="resume-body">
-      <section v-if="data.summary" class="section">
+      <section v-if="sectionHasContent(data, 'summary')" class="section">
         <h2 class="section-title">README.md</h2>
         <p class="summary-text">{{ data.summary }}</p>
       </section>
 
-      <section v-if="data.skills.length" class="section">
+      <section v-if="sectionHasContent(data, 'skills')" class="section">
         <h2 class="section-title">skills.config</h2>
         <SkillList :skills="data.skills" variant="table" />
       </section>
 
-      <section v-if="data.experience.length" class="section">
+      <section v-if="sectionHasContent(data, 'experience')" class="section">
         <h2 class="section-title">experience.log</h2>
         <ExperienceItem :items="data.experience" />
       </section>
 
-      <section v-if="data.projects.length" class="section">
+      <section v-if="sectionHasContent(data, 'projects')" class="section">
         <h2 class="section-title">projects/</h2>
         <ProjectItem :items="data.projects" />
       </section>
 
-      <section v-if="data.education.length" class="section">
+      <section v-if="sectionHasContent(data, 'education')" class="section">
         <h2 class="section-title">education.log</h2>
         <EducationItem :items="data.education" />
       </section>
 
       <section
-        v-if="data.evaluation.some(e => e.text.trim())"
+        v-if="sectionHasContent(data, 'evaluation')"
         class="section"
       >
         <h2 class="section-title">self-eval.md</h2>

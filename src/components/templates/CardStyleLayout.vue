@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useResumeSections } from './shared/useResumeSections';
 import { getSectionLabel } from '@/types/resume';
+import { hasContactInfo, hasIdentity } from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import type { ResumeData, SectionId } from '@/types/resume';
 
@@ -17,10 +18,10 @@ const { renderSection, visibleSections } = useResumeSections(props, {
 
 <template>
   <div class="resume card-style-template">
-    <header class="resume-header">
+    <header v-if="hasIdentity(data)" class="resume-header">
       <h1 v-if="data.name">{{ data.name }}</h1>
       <div v-if="data.title" class="title">{{ data.title }}</div>
-      <div v-if="data.phone || data.email || data.github || data.website || data.age || data.experienceYears" class="contact-bar">
+      <div v-if="hasContactInfo(data)" class="contact-bar">
         <ContactItems :data="data" variant="inline" />
       </div>
       <div v-if="data.jobIntention || data.salary" class="intention-bar">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useResumeSections } from './shared/useResumeSections';
 import { getSectionLabel } from '@/types/resume';
+import { hasContactInfo, hasIdentity, hasText } from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import type { ResumeData, SectionId } from '@/types/resume';
 
@@ -17,24 +18,20 @@ const { renderSection, visibleSections } = useResumeSections(props, {
 
 <template>
   <div class="resume qa-pro-template">
-    <header class="resume-header">
+    <header v-if="hasIdentity(data) || hasText(data.photo)" class="resume-header">
       <div class="header-content">
         <div class="header-left">
-          <div class="avatar">
+          <div v-if="data.photo || data.name" class="avatar">
             <img v-if="data.photo" :src="data.photo" alt="" />
-            <template v-else>{{ data.name ? data.name.charAt(0) : '?' }}</template>
+            <template v-else>{{ data.name.charAt(0) }}</template>
           </div>
           <div class="header-info">
             <h1 v-if="data.name">{{ data.name }}</h1>
             <div v-if="data.title" class="title">{{ data.title }}</div>
           </div>
         </div>
-        <div class="header-right">
-          <ContactItems
-            v-if="data.phone || data.email || data.github || data.website || data.age || data.experienceYears"
-            :data="data"
-            variant="stacked"
-          />
+        <div v-if="hasContactInfo(data)" class="header-right">
+          <ContactItems :data="data" variant="stacked" />
         </div>
       </div>
       <div v-if="data.jobIntention || data.salary" class="header-badges">

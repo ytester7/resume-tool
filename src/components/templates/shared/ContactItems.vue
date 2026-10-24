@@ -1,32 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResumeData } from '@/types/resume';
+import { contactEntries } from '@/utils/resumeView';
 import AppIcon from '@/components/AppIcon.vue';
 
 const props = defineProps<{
   data: ResumeData;
   variant?: 'inline' | 'stacked';
 }>();
+
+// 字段缺失/为空的联系方式直接不产出条目，避免空图标和「26岁 岁」这类重复单位
+const entries = computed(() => contactEntries(props.data));
 </script>
 
 <template>
-  <div :class="['contact-items', props.variant]">
-    <span v-if="data.phone" class="contact-item">
-      <AppIcon name="phone" /> {{ data.phone }}
-    </span>
-    <span v-if="data.email" class="contact-item">
-      <AppIcon name="email" /> {{ data.email }}
-    </span>
-    <span v-if="data.age" class="contact-item">
-      <AppIcon name="user" /> {{ data.age }} 岁
-    </span>
-    <span v-if="data.experienceYears" class="contact-item">
-      <AppIcon name="clock" /> {{ data.experienceYears }} 年经验
-    </span>
-    <span v-if="data.github" class="contact-item">
-      <AppIcon name="github" /> {{ data.github }}
-    </span>
-    <span v-if="data.website" class="contact-item">
-      <AppIcon name="globe" /> {{ data.website }}
+  <div v-if="entries.length" :class="['contact-items', props.variant]">
+    <span v-for="entry in entries" :key="entry.field" class="contact-item">
+      <AppIcon :name="entry.icon" /> {{ entry.text }}
     </span>
   </div>
 </template>
@@ -36,5 +26,7 @@ const props = defineProps<{
 .contact-items.stacked { display: flex; flex-direction: column; gap: 6px; }
 .contact-item {
   display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 </style>

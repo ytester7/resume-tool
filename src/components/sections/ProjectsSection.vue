@@ -3,6 +3,7 @@ import { useTabsStore } from '@/stores/tabs';
 import DraggableList from '@/components/DraggableList.vue';
 import AutoTextarea from '@/components/AutoTextarea.vue';
 import AppIcon from '@/components/AppIcon.vue';
+import AiImproveButton from '@/components/AiImproveButton.vue';
 import type { Project } from '@/types/resume';
 
 const tabs = useTabsStore();
@@ -83,6 +84,11 @@ function add() {
                     :aria-label="`项目经历 ${index + 1} 第 ${lineIdx + 1} 条内容`"
                     @update:model-value="updateItem(index, lineIdx, $event)"
                   />
+                  <AiImproveButton
+                    :line="line"
+                    :context="{ owner: `${element.name} · ${element.role}`, siblings: element.items }"
+                    @apply="updateItem(index, lineIdx, $event)"
+                  />
                   <button class="remove-btn" :aria-label="`删除第 ${lineIdx + 1} 条项目内容`" title="删除" @click="removeItem(index, lineIdx)"><AppIcon name="times" /></button>
                 </div>
               </template>
@@ -137,7 +143,7 @@ function add() {
 .proj-items-block { margin-top: 8px; }
 .proj-items-label { font-size: 11px; color: #888; margin-bottom: 4px; }
 .proj-item-row {
-  display: grid; grid-template-columns: 20px minmax(0, 1fr) 24px;
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) 24px 24px;
   gap: 4px; align-items: start; margin-bottom: 6px;
 }
 /* 卡片内嵌按钮的紧凑尺寸覆盖（基础样式由 main.css 提供） */

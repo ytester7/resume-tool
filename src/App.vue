@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useTabsStore } from '@/stores/tabs';
 import { useFileSystemStore } from '@/stores/fileSystem';
 import { useUiStore } from '@/stores/ui';
+import { useSettingsStore } from '@/stores/settings';
+import { useSnapshotsStore } from '@/stores/snapshots';
 import { useAutoSave } from '@/composables/useAutoSave';
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts';
 import { useStartupRecovery } from '@/composables/useStartupRecovery';
@@ -12,6 +14,7 @@ import { useDocxExport } from '@/composables/useDocxExport';
 import { useUndoHistory } from '@/composables/useUndoHistory';
 import { serializeResume } from '@/utils/parseResume';
 import { importResumeFile } from '@/utils/importFile';
+import { aiParseResumeText } from '@/utils/ai/importParse';
 import { sanitizeFilename } from '@/utils/sanitize';
 import { toErrorMessage } from '@/utils/errors';
 import type { SampleResume } from '@/data/samples';
@@ -22,12 +25,20 @@ import WelcomePanel from '@/components/WelcomePanel.vue';
 import EditorPanel from '@/components/EditorPanel.vue';
 import PreviewPanel from '@/components/PreviewPanel.vue';
 import ImportDialog from '@/components/ImportDialog.vue';
+import SettingsDialog from '@/components/SettingsDialog.vue';
+import AssistantPanel from '@/components/AssistantPanel.vue';
+import ApplicationsPanel from '@/components/ApplicationsPanel.vue';
+import SnapshotsDialog from '@/components/SnapshotsDialog.vue';
+import OptimizerPanel from '@/components/OptimizerPanel.vue';
+import { provideOpenOptimizer } from '@/components/OptimizerPanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
 
 const tabs = useTabsStore();
 const fs = useFileSystemStore();
 const ui = useUiStore();
+const snapshots = useSnapshotsStore();
+const settings = useSettingsStore();
 const { recoverOrphanedTabs } = useStartupRecovery();
 const { exportActiveToPdf } = usePdfExport();
 const { printResume } = usePrintExport();
@@ -38,6 +49,44 @@ const mobileView = ref<'edit' | 'preview'>('edit');
 const hasTabs = computed(() => tabs.tabs.length > 0);
 const importDraft = ref<ResumeImportDraft | null>(null);
 const importing = ref(false);
+const settingsOpen = ref(false);
+const applicationsOpen = ref(false);
+const snapshotsOpen = ref(false);
+const optimizerOpen = ref(false);
+const optimizerJd = ref('');
+const optimizerLabel = ref('');
+
+/** 深层入口（JD 匹配区等）经 provide/inject 打开简历优化工程师 */
+provideOpenOptimizer((jd: string, label: string) => {
+  optimizerJd.value = jd;
+  optimizerLabel.value = label;
+  optimizerOpen.value = true;
+});
+
+/** 投递台账入口（直接子组件，走事件；同时收起台账避免遮挡） */
+function onOptimizeApplication(jd: string, label: string) {
+  optimizerJd.value = jd;
+  optimizerLabel.value = label;
+  optimizerOpen.value = true;
+  applicationsOpen.value = false;
+}
+const aiReparsing = ref(false);
+
+/** 导入确认弹窗内点击「AI 智能解析」：用 AI 重解析原文并替换当前草稿 */
+async function onAiReparse() {
+  const draft = importDraft.value;
+  const config = settings.requireAiConfig();
+  if (!draft || !config || aiReparsing.value) return;
+  aiReparsing.value = true;
+  try {
+    importDraft.value = await aiParseResumeText(config, draft);
+    ui.toastSuccess('AI 解析完成，请核对识别结果');
+  } catch (e) {
+    ui.toastError(toErrorMessage(e));
+  } finally {
+    aiReparsing.value = false;
+  }
+}
 
 useAutoSave();
 
@@ -164,6 +213,7 @@ async function onSave() {
   const ok = await fs.writeToFile(handle, content);
   if (ok) {
     tab.dirty = false;
+    captureSnapshotQuietly(tab, content);
     ui.toastSuccess('保存成功');
   } else {
     ui.toastError('保存失败');
@@ -190,9 +240,17 @@ async function onSaveAs() {
   if (ok) {
     tab.fileHandle = handle;
     tab.dirty = false;
+    captureSnapshotQuietly(tab, content);
     ui.toastSuccess('另存为成功');
   } else {
     ui.toastError('另存为失败');
+  }
+}
+
+/** 保存成功后留档快照；内容过大时静默跳过（不打断保存成功的提示） */
+function captureSnapshotQuietly(tab: NonNullable<typeof tabs.active>, content: string): void {
+  if (!snapshots.capture(tab, content)) {
+    ui.toastInfo('本次未留快照（内容超过 1MB）');
   }
 }
 
@@ -248,6 +306,10 @@ onMounted(async () => {
       :can-undo="canUndo"
       :can-redo="canRedo"
       :has-tab="hasTabs"
+      :on-open-settings="() => (settingsOpen = true)"
+      :ai-ready="settings.aiReady"
+      :on-open-applications="() => (applicationsOpen = true)"
+      :on-open-snapshots="() => (snapshotsOpen = true)"
     />
 
     <template v-if="hasTabs">
@@ -285,14 +347,36 @@ onMounted(async () => {
       @new="onNew"
       @open="onOpen"
       @sample="onSample"
+      @configure-ai="settingsOpen = true"
     />
 
     <ImportDialog
       v-if="importDraft"
       :draft="importDraft"
+      :ai-reparsing="aiReparsing"
       @confirm="confirmImport"
       @cancel="cancelImport"
+      @ai-reparse="onAiReparse"
     />
+
+    <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+
+    <ApplicationsPanel
+      v-if="applicationsOpen"
+      @close="applicationsOpen = false"
+      @optimize="onOptimizeApplication"
+    />
+
+    <SnapshotsDialog v-if="snapshotsOpen" @close="snapshotsOpen = false" />
+
+    <OptimizerPanel
+      v-if="optimizerOpen && settings.aiReady && hasTabs"
+      :preset-jd="optimizerJd"
+      :preset-label="optimizerLabel"
+      @close="optimizerOpen = false"
+    />
+
+    <AssistantPanel v-if="settings.aiReady && hasTabs" />
 
     <ConfirmDialog />
     <Toast />

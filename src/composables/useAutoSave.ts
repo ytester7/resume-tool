@@ -2,6 +2,7 @@ import { watch, onUnmounted } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import { useTabsStore } from '@/stores/tabs';
 import { useFileSystemStore } from '@/stores/fileSystem';
+import { useSnapshotsStore } from '@/stores/snapshots';
 import { serializeResume } from '@/utils/parseResume';
 import type { ResumeSession } from '@/types/resume';
 
@@ -24,6 +25,7 @@ function snapshotPayload(tab: ResumeSession) {
 export function useAutoSave() {
   const tabs = useTabsStore();
   const fs = useFileSystemStore();
+  const snapshots = useSnapshotsStore();
 
   const debouncedFileSave = useDebounceFn(async () => {
     const tab = tabs.active;
@@ -32,7 +34,11 @@ export function useAutoSave() {
       tab.data, tab.template, tab.sectionOrder, tab.theme, tab.targetJd, tab.hiddenSections,
     );
     const ok = await fs.writeToFile(tab.fileHandle, content);
-    if (ok) tab.dirty = false;
+    if (ok) {
+      tab.dirty = false;
+      // 自动写回同样留档（超过单条大小上限时 store 内部跳过，不提示打扰）
+      snapshots.capture(tab, content);
+    }
   }, FILE_SAVE_DEBOUNCE_MS);
 
   const stopWatch = watch(

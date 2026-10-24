@@ -5,7 +5,8 @@ export async function startBlank(page: Page): Promise<void> {
   await page.goto('/');
   const welcome = page.locator('.welcome');
   if (await welcome.count()) {
-    await page.locator('.btn.primary').click();
+    // 欢迎页有多个 .btn.primary（新建 / 配置 AI），限定 hero 操作区
+    await page.locator('.hero .actions .btn.primary').click();
   }
   await page.waitForSelector('.app-editor');
   await page.waitForSelector('input[placeholder="请输入姓名"]');

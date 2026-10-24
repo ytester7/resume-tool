@@ -26,6 +26,14 @@ export class PermissionError extends ResumeError {
   }
 }
 
+/** AI 请求失败：message 已翻译成人话且不含 API Key；cause 保留原始错误供调试 */
+export class AiRequestError extends ResumeError {
+  constructor(message: string, code: string, public cause?: unknown) {
+    super(message, code);
+    this.name = 'AiRequestError';
+  }
+}
+
 /**
  * 从任意被 catch 的值中提取可靠的错误消息字符串。
  *

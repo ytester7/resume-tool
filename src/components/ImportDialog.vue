@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import type { ResumeImportDraft } from '@/types/import';
+import { useSettingsStore } from '@/stores/settings';
+import AppIcon from './AppIcon.vue';
 
-const props = defineProps<{ draft: ResumeImportDraft }>();
+const props = defineProps<{
+  draft: ResumeImportDraft;
+  /** App 层 AI 再解析进行中（按钮转圈、防重复点击） */
+  aiReparsing?: boolean;
+}>();
 const emit = defineEmits<{
   (e: 'confirm'): void;
   (e: 'cancel'): void;
+  /** 用 AI 重新解析原文（App 层执行，成功后替换 draft） */
+  (e: 'ai-reparse'): void;
 }>();
+
+const settings = useSettingsStore();
 
 const confirmBtn = ref<HTMLButtonElement | null>(null);
 
@@ -37,6 +47,21 @@ const confidenceClass = computed(() => {
 const previewText = computed(() => {
   const text = props.draft.rawText.trim();
   return text.length > 2500 ? text.slice(0, 2500) + '\n…（仅预览前 2500 字）' : text;
+});
+
+/** AI 再解析入口：文本类来源 + 有原文 + AI 已配置 */
+const canAiReparse = computed(() =>
+  settings.aiReady && !props.draft.structured && props.draft.rawText.trim().length >= 20,
+);
+
+const privacyHint = computed(() => {
+  if (props.draft.aiAssisted) {
+    return '本次解析由 AI 完成：原文已发送给你配置的服务商；导入后所有字段可继续修改，数据仍只留在本地。';
+  }
+  if (settings.aiReady) {
+    return '导入后进入普通编辑模式，所有字段都可以继续修改；本地解析不会上传任何内容，点击「AI 智能解析」会把原文发送给你配置的服务商。';
+  }
+  return '导入后进入普通编辑模式，所有字段都可以继续修改；解析结果不会上传到任何服务器。';
 });
 
 function onKeydown(e: KeyboardEvent) {
@@ -81,6 +106,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
             </div>
           </div>
           <div class="confidence">
+            <span v-if="draft.aiAssisted" class="ai-badge"><AppIcon name="sparkles" /> AI 解析</span>
             <span class="confidence-num" :class="confidenceClass">{{ draft.confidence }}</span>
             <span class="confidence-label">识别完整度</span>
           </div>
@@ -101,12 +127,23 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
           <pre>{{ previewText }}</pre>
         </details>
 
-        <p class="hint">
-          导入后进入普通编辑模式，所有字段都可以继续修改；解析结果不会上传到任何服务器。
-        </p>
+        <p class="hint">{{ privacyHint }}</p>
       </div>
 
       <footer class="import-actions">
+        <button
+          v-if="canAiReparse"
+          class="btn-ai"
+          type="button"
+          :disabled="aiReparsing"
+          title="用 AI 重新解析原文，识别率通常更好；原文将发送给你配置的 AI 服务商"
+          @click="emit('ai-reparse')"
+        >
+          <AppIcon v-if="aiReparsing" name="spinner" class="spin" />
+          <AppIcon v-else name="sparkles" />
+          {{ aiReparsing ? 'AI 解析中…' : draft.aiAssisted ? '再解析一次' : 'AI 智能解析' }}
+        </button>
+        <span class="actions-spacer" />
         <button class="btn-secondary" type="button" @click="emit('cancel')">取消</button>
         <button ref="confirmBtn" class="btn-primary" type="button" @click="emit('confirm')">
           导入并编辑
@@ -186,8 +223,24 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 .hint { margin: 0; font-size: 11px; color: #9aa7b6; line-height: 1.6; }
 
 .import-actions {
-  display: flex; justify-content: flex-end; gap: 10px;
+  display: flex; justify-content: flex-end; align-items: center; gap: 10px;
   padding: 12px 20px; border-top: 1px solid #f0f0f0; background: #fff;
+}
+.actions-spacer { flex: 1; }
+.btn-ai {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  border: 1px solid #d3adf7; background: #f9f0ff; color: #722ed1;
+}
+.btn-ai:hover:not(:disabled) { background: #efdbff; }
+.btn-ai:disabled { opacity: 0.6; cursor: wait; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 8px; border-radius: 10px;
+  background: #722ed1; color: #fff; font-size: 10px; font-weight: 600;
+  margin-bottom: 4px;
 }
 .btn-secondary, .btn-primary {
   padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;

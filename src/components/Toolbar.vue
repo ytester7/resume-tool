@@ -19,6 +19,14 @@ defineProps<{
   canRedo: boolean;
   /** 当前是否有打开的简历，用于禁用保存/导出 */
   hasTab: boolean;
+  /** 打开 AI 设置弹窗 */
+  onOpenSettings: () => void;
+  /** AI 已配置时高亮提示 */
+  aiReady?: boolean;
+  /** 打开投递记录面板（本地台账，无需 AI） */
+  onOpenApplications: () => void;
+  /** 打开历史版本（快照）面板 */
+  onOpenSnapshots: () => void;
 }>();
 
 const exportMenu = ref<HTMLDetailsElement | null>(null);
@@ -83,6 +91,25 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
         <AppIcon name="redo" />
       </button>
 
+      <button
+        class="tool-btn icon-btn"
+        title="历史版本（保存即留档，可恢复）"
+        aria-label="历史版本"
+        :disabled="!hasTab"
+        @click="onOpenSnapshots"
+      >
+        <AppIcon name="clock" />
+      </button>
+
+      <button
+        class="tool-btn icon-btn"
+        title="投递记录"
+        aria-label="投递记录"
+        @click="onOpenApplications"
+      >
+        <AppIcon name="briefcase" />
+      </button>
+
       <details v-if="hasTab" ref="exportMenu" class="export-menu">
         <summary class="tool-btn primary" title="导出 (Ctrl+P)">
           <AppIcon name="print" /><span class="btn-text">导出 PDF</span><span class="caret">▾</span>
@@ -108,6 +135,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
     </div>
 
     <div class="toolbar-shortcuts">
+      <button
+        class="tool-btn icon-btn"
+        :class="{ 'ai-active': aiReady }"
+        :title="aiReady ? 'AI 设置（已启用）' : 'AI 设置（未配置）'"
+        aria-label="AI 设置"
+        @click="onOpenSettings"
+      >
+        <AppIcon name="cogs" />
+      </button>
       <kbd>[</kbd>/<kbd>]</kbd> 切换模板
     </div>
   </div>
@@ -160,7 +196,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick));
 .export-item strong { font-size: 13px; font-weight: 600; }
 .export-item span { color: #8c8c8c; font-size: 11px; }
 
-.toolbar-shortcuts { font-size: 11px; color: #999; white-space: nowrap; }
+.toolbar-shortcuts { font-size: 11px; color: #999; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+.ai-active { color: #722ed1; border-color: #d3adf7; }
 .toolbar-shortcuts kbd {
   display: inline-block; padding: 1px 5px;
   background: #f5f5f5; border: 1px solid #d9d9d9;

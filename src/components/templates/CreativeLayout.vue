@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useResumeSections } from './shared/useResumeSections';
 import { getSectionLabel } from '@/types/resume';
+import { hasContactInfo, hasIdentity } from '@/utils/resumeView';
 import ContactItems from './shared/ContactItems.vue';
 import type { ResumeData, SectionId } from '@/types/resume';
 
@@ -17,25 +18,19 @@ const { renderSection, visibleSections } = useResumeSections(props, {
 
 <template>
   <div class="resume creative-resume">
-    <header class="resume-header">
+    <header v-if="hasIdentity(data)" class="resume-header">
       <div class="header-content">
         <div class="header-left">
           <h1 v-if="data.name" class="resume-name">{{ data.name }}</h1>
           <p v-if="data.title" class="resume-title">{{ data.title }}</p>
         </div>
-        <div class="header-right">
-          <ContactItems
-            v-if="data.phone || data.email || data.github || data.website"
-            :data="data"
-            variant="stacked"
-          />
+        <div v-if="hasContactInfo(data)" class="header-right">
+          <ContactItems :data="data" variant="stacked" />
         </div>
       </div>
-      <div v-if="data.jobIntention || data.salary || data.experienceYears || data.age" class="header-tags">
+      <div v-if="data.jobIntention || data.salary" class="header-tags">
         <span v-if="data.jobIntention" class="tag">{{ data.jobIntention }}</span>
         <span v-if="data.salary" class="tag">{{ data.salary }}</span>
-        <span v-if="data.experienceYears" class="tag">{{ data.experienceYears }}经验</span>
-        <span v-if="data.age" class="tag">{{ data.age }}</span>
       </div>
     </header>
 

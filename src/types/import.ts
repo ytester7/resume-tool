@@ -19,4 +19,6 @@ export interface ResumeImportDraft {
   confidence: number;
   /** JSON 是结构化数据，可直接打开；PDF/Word/文本需要确认 */
   structured: boolean;
+  /** 本草稿由 AI 解析生成（隐私文案与核对提示据此展示） */
+  aiAssisted?: boolean;
 }
