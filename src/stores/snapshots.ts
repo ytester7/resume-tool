@@ -116,7 +116,7 @@ export const useSnapshotsStore = defineStore('snapshots', () => {
       return count <= PER_TAB_LIMIT;
     });
     // 全局条数上限 + 总预算（LRU：按 savedAt 保留最新的）
-    let list = perTabFiltered
+    const list = perTabFiltered
       .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
       .slice(0, TOTAL_LIMIT);
     let total = list.reduce((sum, e) => sum + entryBytes(e), 0);
