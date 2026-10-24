@@ -35,7 +35,7 @@ https://<你的用户名>.github.io/resume-tool/
 | 11 | 三级拖拽排序 | 区块级 + 列表项级 + 工作内容子项级 |
 | 12 | 证件照 | 上传后自动按 3:4 居中裁剪压缩，Executive / QA专业 / 科技渐变 三套模板已支持 |
 | 13 | 自动保存 + 崩溃恢复 | localStorage 兜底，刷新/崩溃后启动时恢复「孤儿 Tab」 |
-| 14 | AI 能力（可选，自带 Key） | 工具栏齿轮配置 DeepSeek / OpenAI 兼容 / OpenRouter / OpenAI / Ollama 后解锁：旧简历 AI 解析、JD 深度分析、单条经历润色（强化动词 / 突出成果 / 精简 / 自定义） |
+| 14 | AI 能力（可选，自带 Key） | 工具栏齿轮配置 DeepSeek / OpenAI 兼容 / OpenRouter / OpenAI / Ollama 后解锁：旧简历 AI 解析、JD 深度分析、单条经历润色（强化动词 / 突出成果 / 精简 / 自定义）、**AI 聊天助手**（提案式修改简历，逐条采纳/忽略，Ctrl+Z 可撤销） |
 | 15 | 本地优先 | **未配置 AI 时业务代码零网络请求**；导入解析、JD 关键词匹配与健康度全部本地计算；AI 仅在点击对应按钮时把你可见的文本发给你自己配置的服务商，Key 只存本地浏览器 |
 | 16 | 文件读写降级 | Chromium 走 File System Access API；Firefox / Safari 自动降级为下载 JSON |
 | 17 | 键盘快捷键 | Ctrl+S / Ctrl+O / Ctrl+P / Ctrl+Shift+N / Ctrl+Shift+S / Ctrl+Z / Ctrl+Shift+Z / `[` `]` |

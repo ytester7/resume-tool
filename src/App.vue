@@ -25,6 +25,7 @@ import EditorPanel from '@/components/EditorPanel.vue';
 import PreviewPanel from '@/components/PreviewPanel.vue';
 import ImportDialog from '@/components/ImportDialog.vue';
 import SettingsDialog from '@/components/SettingsDialog.vue';
+import AssistantPanel from '@/components/AssistantPanel.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
 
@@ -321,6 +322,8 @@ onMounted(async () => {
     />
 
     <SettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+
+    <AssistantPanel v-if="settings.aiReady && hasTabs" />
 
     <ConfirmDialog />
     <Toast />

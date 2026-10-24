@@ -9,6 +9,13 @@
 
 ### Added
 
+- **AI 聊天助手（提案式改简历）**：编辑器右下角浮动按钮打开侧边对话面板；AI 基于简历段落目录提出修改提案，
+  以卡片形式展示「原文 → 改后 + 理由」，用户逐条**采纳 / 忽略**后才写入；采纳走整体快照替换，Ctrl+Z 可撤销。
+  - 段落提案协议（`utils/ai/proposals.ts`，移植自 Reactive Resume 并适配本项目纯字符串字段）：
+    段落 id = 目标路径 + 内容哈希，文本一变 id 即失效；采纳前二次校验「当前文本 === 提案时文本」，
+    模型基于旧目录或用户已手改的段落自动落为失效而非盲写；支持替换与在其后插入新条目两种编辑。
+  - 对话按简历 Tab 独立保存（localStorage，最近 20 条），快捷建议一键发起；
+    已保存的目标 JD 自动作为上下文附带。
 - **AI 设置（BYOK）**：工具栏新增设置齿轮，弹窗内配置 AI 服务商（DeepSeek / OpenAI 兼容接口 / OpenRouter / OpenAI / Ollama 本地模型），
   支持连接测试（测试通过才可保存）、Key 脱敏回显与一键清除；配置只存本地 localStorage（`resume_tool_settings_v1`）。
 - **AI 解析导入**：导入确认弹窗内新增「AI 智能解析」，把原文交给用户配置的模型做严格抽取（绝不推断、不确定留空），
@@ -17,7 +24,8 @@
   本地关键词匹配分保持免费且仍是唯一数字结论（AI 不出分数）。
 - **单条润色**：工作/项目经历条目行新增 AI 按钮，提供强化动词 / 突出成果 / 精简 / 自定义指令四种改写；
   输出契约 `{text, why, addsFacts}`，新增事实会提示核对；应用前校验原文未变，替换写入正常数据流（可撤销）。
-- AI 基础设施：`utils/ai/`（client / providers / prompt / importParse / jdAnalysis / improve）、`stores/settings.ts`、`SettingsDialog.vue`、`AiImproveButton.vue`；
+- AI 基础设施：`utils/ai/`（client / providers / prompt / importParse / jdAnalysis / improve / proposals / assistant）、
+  `stores/settings.ts`、`SettingsDialog.vue`、`AiImproveButton.vue`、`AssistantPanel.vue`；
   新增依赖 zod 用于校验模型输出；提示词移植自 Reactive Resume 的安全结构（安全前缀、数据块防注入、输出契约约束）。
 
 ### Changed
