@@ -46,6 +46,19 @@
   `stores/settings.ts`、`SettingsDialog.vue`、`AiImproveButton.vue`、`AssistantPanel.vue`；
   新增依赖 zod 用于校验模型输出；提示词移植自 Reactive Resume 的安全结构（安全前缀、数据块防注入、输出契约约束）。
 
+### Fixed
+
+- MCP stdio 真正接通：`node src/server.js --stdio` 经 StdioServerTransport 连接外部 Agent，
+  且该模式下不启动 HTTP、不向 stdout 打印（此前 README 的 Claude 配置实际不可用）
+- 伴随进程 HTTP API 增加来源校验：仅放行本机开发地址（localhost/127.0.0.1 任意端口）与
+  `file://` 页面，外部网站的跨站请求 403 拒绝（防借登录态消耗请求配额）；坏 JSON 请求体返回 400
+- 投递漏斗改为历史口径：走到某阶段后关闭（不合适）的记录仍计入该阶段，
+  新增 `progressLevel` 字段记录历史最高进度，旧数据按状态时间线自动回填
+- AI 助手对话恢复：消息 id 从已加载的最大值继续（修复与新消息的 key 冲突）；
+  持久化数据逐条形状校验；关闭 Tab 时清理遗留的会话存储键
+- AI 客户端：外部取消监听器在请求结束后移除（防 signal 复用时泄漏）；
+  伴随进程请求超时翻译为人话提示
+
 ### Changed
 
 - 隐私承诺更新：README 功能表与导入/JD 弹窗文案由「零网络请求」调整为「未配置 AI 时零网络请求」；

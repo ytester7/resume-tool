@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import type { AiProviderConfig } from '@/types/settings';
 import { SETTINGS_STORAGE_KEY } from '@/types/settings';
 import { chatCompletion } from '@/utils/ai/client';
-import { PROVIDER_CATALOG, isConfigComplete, maskApiKey } from '@/utils/ai/providers';
+import { isConfigComplete, maskApiKey } from '@/utils/ai/providers';
 
 function loadSettings(): AiProviderConfig | null {
   try {
@@ -67,6 +67,5 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     ai, aiReady, keyPreview,
     saveAiConfig, clearAiConfig, testConnection, requireAiConfig,
-    providerCatalog: PROVIDER_CATALOG,
   };
 });

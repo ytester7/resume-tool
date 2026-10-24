@@ -1,4 +1,5 @@
-import { test, expect, type Route } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
+import { startBlank } from './helpers';
 
 const COMPANION = 'http://127.0.0.1:41722';
 
@@ -36,9 +37,7 @@ async function mockCompanion(page: import('@playwright/test').Page): Promise<voi
 
 test('Boss直聘直连：伴随进程在线时从链接抓取 JD 并回填表单', async ({ page }) => {
   await mockCompanion(page);
-  await page.goto('/');
-  await page.locator('.btn.primary').click(); // 新建空白简历进入编辑器
-  await page.waitForSelector('.app-editor');
+  await startBlank(page);
 
   await page.locator('button[aria-label="投递记录"]').click();
   const dialog = page.locator('.apps-dialog');
@@ -64,9 +63,7 @@ test('Boss直聘直连：伴随进程在线时从链接抓取 JD 并回填表单
 
 test('Boss直聘直连：伴随进程不在线时无抓取入口，手动粘贴不受影响', async ({ page }) => {
   await page.route(`${COMPANION}/**`, (route: Route) => route.abort());
-  await page.goto('/');
-  await page.locator('.btn.primary').click();
-  await page.waitForSelector('.app-editor');
+  await startBlank(page);
 
   await page.locator('button[aria-label="投递记录"]').click();
   const dialog = page.locator('.apps-dialog');

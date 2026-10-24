@@ -3,7 +3,14 @@ import { computed, ref } from 'vue';
 import type { ApplicationStatus, JobApplication } from '@/types/applications';
 import { APPLICATIONS_STORAGE_KEY } from '@/types/applications';
 import { generateId } from '@/types/resume';
-import { calcApplicationStats } from '@/utils/applications';
+import { calcApplicationStats, STATUS_LEVEL } from '@/utils/applications';
+
+function isValidApplication(a: unknown): a is JobApplication {
+  return !!a && typeof a === 'object'
+    && typeof (a as JobApplication).id === 'string'
+    && typeof (a as JobApplication).company === 'string'
+    && typeof (a as JobApplication).position === 'string';
+}
 
 function loadApplications(): JobApplication[] {
   try {
@@ -11,17 +18,26 @@ function loadApplications(): JobApplication[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    // 逐条兜底校验：缺关键字段的记录直接丢弃，坏数据不拖垮整个台账
-    return parsed.filter(
-      (a): a is JobApplication =>
-        !!a && typeof a === 'object'
-        && typeof (a as JobApplication).id === 'string'
-        && typeof (a as JobApplication).company === 'string'
-        && typeof (a as JobApplication).position === 'string',
-    );
+    // 逐条兜底校验：缺关键字段的记录直接丢弃，坏数据不拖垮整个台账；
+    // 旧数据补 progressLevel 回填（无历史信息时按当前状态推）
+    return parsed.filter(isValidApplication).map(backfillProgress);
   } catch {
     return [];
   }
+}
+
+/** 旧记录缺 progressLevel 时按当前状态回填（「不合适」按时间线里出现过的最高阶段推） */
+function backfillProgress(app: JobApplication): JobApplication {
+  if (app.progressLevel !== undefined) return app;
+  if (app.status !== '不合适') {
+    return { ...app, progressLevel: Math.max(0, STATUS_LEVEL[app.status]) };
+  }
+  let max = 0;
+  for (const note of app.notes) {
+    const m = note.text.match(/状态：(.+?) → 不合适$/);
+    if (m && m[1] in STATUS_LEVEL) max = Math.max(max, STATUS_LEVEL[m[1] as ApplicationStatus]);
+  }
+  return { ...app, progressLevel: max };
 }
 
 function persist(list: JobApplication[]): void {
@@ -82,14 +98,16 @@ export const useApplicationsStore = defineStore('applications', () => {
     commit(list.value.filter((a) => a.id !== id));
   }
 
-  /** 状态变更自动写入时间线，便于回顾每条投递的推进节奏 */
+  /** 状态变更自动写入时间线，并推进历史最高进度（关闭后漏斗仍按历史口径统计） */
   function setStatus(id: string, status: ApplicationStatus): void {
     const now = new Date().toISOString();
     commit(list.value.map((a) => {
       if (a.id !== id || a.status === status) return a;
+      const progressLevel = Math.max(a.progressLevel ?? STATUS_LEVEL[a.status], STATUS_LEVEL[status], 0);
       return {
         ...a,
         status,
+        progressLevel,
         updatedAt: now,
         notes: [...a.notes, { at: now, text: `状态：${a.status} → ${status}` }],
       };
@@ -107,10 +125,6 @@ export const useApplicationsStore = defineStore('applications', () => {
     ));
   }
 
-  function getByTitle(title: string): JobApplication | undefined {
-    return list.value.find((a) => a.resumeTitle === title);
-  }
-
   /** 导出为可迁移的 JSON 字符串 */
   function exportJson(): string {
     return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), applications: list.value }, null, 2);
@@ -126,13 +140,7 @@ export const useApplicationsStore = defineStore('applications', () => {
       const incoming = Array.isArray(parsed.applications) ? parsed.applications : null;
       if (!incoming) return null;
       const existing = new Set(list.value.map((a) => a.id));
-      const valid = incoming.filter(
-        (a): a is JobApplication =>
-          !!a && typeof a === 'object'
-          && typeof (a as JobApplication).id === 'string'
-          && typeof (a as JobApplication).company === 'string'
-          && typeof (a as JobApplication).position === 'string',
-      );
+      const valid = incoming.filter(isValidApplication).map(backfillProgress);
       const fresh = valid.filter((a) => !existing.has(a.id));
       if (fresh.length > 0) commit([...fresh, ...list.value]);
       return { imported: fresh.length, skipped: valid.length - fresh.length };
@@ -144,7 +152,7 @@ export const useApplicationsStore = defineStore('applications', () => {
   return {
     list, stats,
     addApplication, updateApplication, removeApplication,
-    setStatus, addNote, getByTitle,
+    setStatus, addNote,
     exportJson, importJson,
   };
 });

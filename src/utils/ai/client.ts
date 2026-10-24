@@ -28,8 +28,9 @@ export async function chatCompletion(
 ): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  // 外部 signal 取消时同步中断内部请求
-  options.signal?.addEventListener('abort', () => controller.abort(), { once: true });
+  // 外部 signal 取消时同步中断内部请求；finally 移除监听避免 signal 复用时累积
+  const onExternalAbort = () => controller.abort();
+  options.signal?.addEventListener('abort', onExternalAbort, { once: true });
 
   let response: Response;
   try {
@@ -61,6 +62,7 @@ export async function chatCompletion(
     );
   } finally {
     clearTimeout(timeout);
+    options.signal?.removeEventListener('abort', onExternalAbort);
   }
 
   if (!response.ok) {

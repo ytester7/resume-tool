@@ -168,15 +168,6 @@ export function resolveProposals(passages: Passage[], edits: AiEdit[]): Resolved
   return out;
 }
 
-/** target.field 与 Experience/Project 联合类型的桥接：字段名由本文件的判别 target 保证合法 */
-function readTextField(item: { id: string }, field: string): string | undefined {
-  return (item as unknown as Record<string, string | undefined>)[field];
-}
-
-function writeTextField(item: { id: string }, field: string, value: string): void {
-  (item as unknown as Record<string, string>)[field] = value;
-}
-
 export type ApplyResult = { ok: true; data: ResumeData } | { ok: false; reason: 'stale' | 'invalid' };
 
 /**
@@ -198,13 +189,17 @@ export function applyProposal(data: ResumeData, proposal: ResolvedProposal): App
         const cs = clone.customSections.find((c) => c.id === target.itemId);
         return cs ? cs.content : null;
       }
-      case 'experience':
-      case 'projects': {
-        const list = target.section === 'experience' ? clone.experience : clone.projects;
-        const item = list.find((e) => e.id === target.itemId);
+      case 'experience': {
+        const item = clone.experience.find((e) => e.id === target.itemId);
         if (!item) return null;
         if (target.field === 'items') return item.items[target.index] ?? null;
-        return readTextField(item, target.field) ?? null;
+        return item[target.field];
+      }
+      case 'projects': {
+        const item = clone.projects.find((e) => e.id === target.itemId);
+        if (!item) return null;
+        if (target.field === 'items') return item.items[target.index] ?? null;
+        return item[target.field];
       }
     }
   };
@@ -226,21 +221,28 @@ export function applyProposal(data: ResumeData, proposal: ResolvedProposal): App
         cs.content = proposal.after;
         return true;
       }
-      case 'experience':
-      case 'projects': {
-        const list = target.section === 'experience' ? clone.experience : clone.projects;
-        const item = list.find((e) => e.id === target.itemId);
+      case 'experience': {
+        const item = clone.experience.find((e) => e.id === target.itemId);
         if (!item) return false;
         if (target.field === 'items') {
-          if (proposal.add) {
-            item.items.splice(target.index + 1, 0, proposal.after);
-          } else {
-            if (item.items[target.index] === undefined) return false;
-            item.items[target.index] = proposal.after;
-          }
+          if (proposal.add) item.items.splice(target.index + 1, 0, proposal.after);
+          else if (item.items[target.index] !== undefined) item.items[target.index] = proposal.after;
+          else return false;
           return true;
         }
-        writeTextField(item, target.field, proposal.after);
+        item[target.field] = proposal.after;
+        return true;
+      }
+      case 'projects': {
+        const item = clone.projects.find((e) => e.id === target.itemId);
+        if (!item) return false;
+        if (target.field === 'items') {
+          if (proposal.add) item.items.splice(target.index + 1, 0, proposal.after);
+          else if (item.items[target.index] !== undefined) item.items[target.index] = proposal.after;
+          else return false;
+          return true;
+        }
+        item[target.field] = proposal.after;
         return true;
       }
     }

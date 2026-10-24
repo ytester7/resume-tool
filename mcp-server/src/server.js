@@ -3,8 +3,9 @@ import { DEFAULT_PORT, ensureDataDirs, logLine, pinBrowsersPath } from './paths.
 
 /**
  * 入口：
- *   node src/server.js          启动伴随进程（HTTP API + MCP）
- *   node src/server.js --login  只打开登录浏览器，扫码后手动关闭窗口
+ *   node src/server.js           启动伴随进程（HTTP API，供 web 应用直连）
+ *   node src/server.js --stdio   以 MCP stdio 模式运行（供 Claude Desktop 等外部 Agent）
+ *   node src/server.js --login   只打开登录浏览器，扫码后手动关闭窗口
  *
  * 数据红线：所有可写数据（登录态/浏览器/日志）都在仓库 .mcp/ 下。
  */
@@ -25,25 +26,25 @@ async function main() {
     return;
   }
 
+  if (args.includes('--stdio')) {
+    // MCP stdio 模式：stdin/stdout 是 JSON-RPC 通道，绝不能向 stdout 打印日志
+    const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+    const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
+    const { buildMcpServer } = await import('./mcp.js');
+    const mcp = buildMcpServer(McpServer, boss);
+    await mcp.connect(new StdioServerTransport());
+    logLine('mcp stdio transport connected');
+    return;
+  }
+
   const port = Number(process.env.RESUME_TOOL_MCP_PORT ?? DEFAULT_PORT);
   const { createHttpServer } = await import('./http-api.js');
   createHttpServer(() => boss, port);
 
-  // MCP 层按需启用：环境变量 RESUME_TOOL_MCP=off 可关闭（只留 HTTP API）
-  if (process.env.RESUME_TOOL_MCP !== 'off') {
-    try {
-      const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
-      const { buildMcpServer } = await import('./mcp.js');
-      buildMcpServer(McpServer, boss);
-      logLine('mcp tools registered (stdio usage via Claude Desktop config)');
-    } catch (e) {
-      logLine(`mcp layer unavailable (http api still fine): ${e?.message ?? e}`);
-    }
-  }
-
   console.log(`[resume-tool-mcp] 伴随进程已启动：http://127.0.0.1:${port} （仅本机回环）`);
   console.log('[resume-tool-mcp] 数据目录：.mcp/（项目内，登录态与日志都在这里，删除即清空）');
   console.log('[resume-tool-mcp] 首次使用请先运行 npm run mcp:login 扫码登录');
+  console.log('[resume-tool-mcp] 外部 Agent 接入：node src/server.js --stdio');
 }
 
 main().catch((e) => {

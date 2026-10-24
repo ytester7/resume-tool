@@ -4,7 +4,6 @@ import { setActivePinia, createPinia } from 'pinia';
 import AiImproveButton from './AiImproveButton.vue';
 import { useSettingsStore } from '@/stores/settings';
 import { SETTINGS_STORAGE_KEY } from '@/types/settings';
-import { toErrorMessage } from '@/utils/errors';
 
 vi.mock('@/utils/ai/improve', () => ({
   improveLine: vi.fn(),
@@ -89,7 +88,7 @@ describe('AiImproveButton', () => {
     expect(wrapper.find('.improve-options').exists()).toBe(true);
   });
 
-  it('润色失败时展示人话错误', async () => {
+  it('润色失败时展示可重试状态，不崩', async () => {
     enableAi();
     setActivePinia(createPinia());
     improveMock.mockRejectedValueOnce(new Error('服务暂不可用'));
@@ -97,11 +96,11 @@ describe('AiImproveButton', () => {
     const wrapper = mountButton('负责搭建 CI');
     await wrapper.find('.improve-btn').trigger('click');
     await wrapper.findAll('.option-btn')[0].trigger('click');
-    await new Promise((r) => setTimeout(r, 0));
+    await flushPromises();
 
-    // 错误走 ui store 的 toast，弹层保持选项态可重试
+    // 错误走 ui store 的 toast，弹层保持选项态可重试，不出现结果卡片
     expect(wrapper.find('.improve-options').exists()).toBe(true);
-    expect(toErrorMessage(new Error('服务暂不可用'))).toBe('服务暂不可用');
+    expect(wrapper.find('.result-text').exists()).toBe(false);
     expect(useSettingsStore().aiReady).toBe(true);
   });
 });

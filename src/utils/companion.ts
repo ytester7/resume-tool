@@ -5,6 +5,8 @@
  * 伴随进程未启动时所有方法静默降级，主流程不受影响。
  */
 
+import { AiRequestError } from '@/utils/errors';
+
 const COMPANION_BASE = 'http://127.0.0.1:41722';
 
 export interface CompanionHealth {
@@ -38,6 +40,11 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 15_000):
       throw err;
     }
     return payload.data as T;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new AiRequestError(`伴随进程请求超时（${Math.round(timeoutMs / 1000)} 秒）`, 'COMPANION_TIMEOUT', e);
+    }
+    throw e;
   } finally {
     clearTimeout(timer);
   }
@@ -57,14 +64,6 @@ export function fetchJdViaCompanion(url: string): Promise<FetchedJob> {
   return request<FetchedJob>('/api/fetch-jd', {
     method: 'POST',
     body: JSON.stringify({ url }),
-  }, 90_000);
-}
-
-/** 搜索岗位（需要伴随进程已登录） */
-export function searchJobsViaCompanion(query: string, city?: string): Promise<{ jobs: FetchedJob[] }> {
-  return request<{ jobs: FetchedJob[] }>('/api/search-jobs', {
-    method: 'POST',
-    body: JSON.stringify({ query, city }),
   }, 90_000);
 }
 

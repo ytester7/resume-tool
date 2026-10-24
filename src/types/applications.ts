@@ -29,6 +29,12 @@ export interface JobApplication {
   position: string;
   channel: ApplicationChannel;
   status: ApplicationStatus;
+  /**
+   * 历史最高进度（0=意向 … 5=offer）。关闭为「不合适」后 status 回不到
+   * 厸史阶段，但漏斗的「已投递/已沟通/约面面试」按历史口径统计，
+   * 旧数据缺省时按当前状态回填（见 stores/applications.ts）。
+   */
+  progressLevel?: number;
   /** JD 快照：粘贴保存时的原文，供岗位匹配与 AI 分析复用 */
   jd: string;
   /** 岗位链接（仅作备忘，工具不会访问它） */

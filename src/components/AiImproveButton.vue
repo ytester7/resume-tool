@@ -73,11 +73,8 @@ function apply() {
 }
 
 function toggle(): void {
-  open.value = !open.value;
-  if (!open.value) {
-    result.value = null;
-    customInstruction.value = '';
-  }
+  if (open.value) close();
+  else open.value = true;
 }
 
 function close(): void {

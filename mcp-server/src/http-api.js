@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { DEFAULT_PORT, logLine } from './paths.js';
+import { appError } from './errors.js';
 
 /**
  * 本地 HTTP API（仅绑定 127.0.0.1）：
@@ -7,18 +8,32 @@ import { DEFAULT_PORT, logLine } from './paths.js';
  * - POST /api/fetch-jd    {url} → {company, position, salary, jd, url}
  * - POST /api/search-jobs {query, city?, page?} → {jobs: [...]}
  * - POST /api/login       打开登录浏览器（用户扫码）
- * CORS 对本机放开（监听只在回环地址，不对外暴露）
+ *
+ * 来源校验：虽然只监听回环地址，任意网页仍可向 127.0.0.1 发起跨站请求，
+ * 因此 Origin 必须是本机开发地址（localhost/127.0.0.1 任意端口）或
+ * file:// 的 "null"；非浏览器客户端（无 Origin，如 curl）放行。
  */
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const ALLOWED_ORIGIN_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
-function sendJson(res, status, payload) {
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (origin === 'null') return true; // file:// 打开的本地页面
+  return ALLOWED_ORIGIN_RE.test(origin);
+}
+
+function corsHeadersFor(origin) {
+  return {
+    'Access-Control-Allow-Origin': origin ?? '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    Vary: 'Origin',
+  };
+}
+
+function sendJson(res, status, payload, cors) {
   const body = JSON.stringify(payload);
-  res.writeHead(status, { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(status, { ...cors, 'Content-Type': 'application/json; charset=utf-8' });
   res.end(body);
 }
 
@@ -28,7 +43,7 @@ function readBody(req) {
     req.on('data', (chunk) => {
       data += chunk;
       if (data.length > 1024 * 1024) {
-        reject(new Error('请求体过大'));
+        reject(appError('请求体过大', 'BAD_REQUEST'));
         req.destroy();
       }
     });
@@ -37,7 +52,7 @@ function readBody(req) {
       try {
         resolve(JSON.parse(data));
       } catch {
-        reject(new Error('请求体不是合法 JSON'));
+        reject(appError('请求体不是合法 JSON', 'BAD_REQUEST'));
       }
     });
     req.on('error', reject);
@@ -54,10 +69,17 @@ function errorPayload(e) {
  */
 export function createHttpServer(loadBoss, port = DEFAULT_PORT) {
   const server = http.createServer(async (req, res) => {
+    const origin = req.headers.origin;
+    const cors = corsHeadersFor(origin);
+
     if (req.method === 'OPTIONS') {
-      res.writeHead(204, CORS_HEADERS);
+      res.writeHead(204, cors);
       res.end();
       return;
+    }
+    if (!isAllowedOrigin(origin)) {
+      logLine(`http blocked disallowed origin: ${origin}`);
+      return sendJson(res, 403, { ok: false, error: '来源不被允许', code: 'FORBIDDEN_ORIGIN' }, cors);
     }
 
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
@@ -73,7 +95,7 @@ export function createHttpServer(loadBoss, port = DEFAULT_PORT) {
             requestsUsed: boss.getThrottle().count,
             requestsLimit: boss.getThrottle().maxPerSession,
           },
-        });
+        }, cors);
       }
 
       const boss = await loadBoss();
@@ -81,35 +103,35 @@ export function createHttpServer(loadBoss, port = DEFAULT_PORT) {
       if (req.method === 'POST' && url.pathname === '/api/fetch-jd') {
         const { url: jobUrl } = await readBody(req);
         if (typeof jobUrl !== 'string' || !jobUrl) {
-          return sendJson(res, 400, { ok: false, error: '缺少 url 参数', code: 'BAD_REQUEST' });
+          return sendJson(res, 400, errorPayload(appError('缺少 url 参数', 'BAD_REQUEST')), cors);
         }
         const detail = await boss.fetchJd(jobUrl);
-        return sendJson(res, 200, { ok: true, data: detail });
+        return sendJson(res, 200, { ok: true, data: detail }, cors);
       }
 
       if (req.method === 'POST' && url.pathname === '/api/search-jobs') {
         const body = await readBody(req);
         if (typeof body.query !== 'string' || !body.query.trim()) {
-          return sendJson(res, 400, { ok: false, error: '缺少 query 参数', code: 'BAD_REQUEST' });
+          return sendJson(res, 400, errorPayload(appError('缺少 query 参数', 'BAD_REQUEST')), cors);
         }
         const jobs = await boss.searchJobs({
           query: body.query,
           city: typeof body.city === 'string' ? body.city : undefined,
           page: Number.isInteger(body.page) ? body.page : 1,
         });
-        return sendJson(res, 200, { ok: true, data: { jobs } });
+        return sendJson(res, 200, { ok: true, data: { jobs } }, cors);
       }
 
       if (req.method === 'POST' && url.pathname === '/api/login') {
         const result = await boss.openLoginBrowser();
-        return sendJson(res, 200, { ok: true, data: result });
+        return sendJson(res, 200, { ok: true, data: result }, cors);
       }
 
-      return sendJson(res, 404, { ok: false, error: '接口不存在', code: 'NOT_FOUND' });
+      return sendJson(res, 404, errorPayload(appError('接口不存在', 'NOT_FOUND')), cors);
     } catch (e) {
       logLine(`http ${req.method} ${url.pathname} -> ${e?.code ?? ''} ${e?.message ?? ''}`);
       const status = e?.code === 'BAD_REQUEST' ? 400 : 502;
-      return sendJson(res, status, errorPayload(e));
+      return sendJson(res, status, errorPayload(e), cors);
     }
   });
 

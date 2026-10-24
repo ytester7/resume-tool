@@ -4,6 +4,8 @@
  * 明确错误，绝不自动重试或绕过（红线）。
  */
 
+import { appError } from './errors.js';
+
 const RISK_URL_PATTERNS = [
   /\/web\/common\/security-check/,
   /\/web\/geek\/safe/,
@@ -41,11 +43,7 @@ export function detectPageState({ url, title = '', html = '' }) {
 /** 把探测结果转成给调用方（web 端 / MCP 客户端）的结构化错误 */
 export function riskError(kind) {
   if (kind === 'login') {
-    const err = new Error('登录态已失效：请点击应用里的「打开登录浏览器」重新扫码登录');
-    err.code = 'NEED_LOGIN';
-    return err;
+    return appError('登录态已失效：请点击应用里的「打开登录浏览器」重新扫码登录', 'NEED_LOGIN');
   }
-  const err = new Error('触发平台风控/验证码：已按红线停止本次操作，请稍后在浏览器里正常访问一次 zhipin.com 后再试');
-  err.code = 'RISK_CONTROL';
-  return err;
+  return appError('触发平台风控/验证码：已按红线停止本次操作，请稍后在浏览器里正常访问一次 zhipin.com 后再试', 'RISK_CONTROL');
 }

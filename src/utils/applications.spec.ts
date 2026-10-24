@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcApplicationStats, isForwardTransition } from './applications';
+import { calcApplicationStats } from './applications';
 import type { JobApplication } from '@/types/applications';
 
 function makeApp(status: JobApplication['status'], overrides: Partial<JobApplication> = {}): JobApplication {
@@ -52,12 +52,23 @@ describe('calcApplicationStats', () => {
     expect(stats.offer).toBe(1);
     expect(stats.closed).toBe(1);
   });
-});
 
-describe('isForwardTransition', () => {
-  it('前进为 true，回退与终态为 false', () => {
-    expect(isForwardTransition('已投递', '约面')).toBe(true);
-    expect(isForwardTransition('面试', '已沟通')).toBe(false);
-    expect(isForwardTransition('意向', '不合适')).toBe(false);
+  it('历史口径：走到面试后关闭的记录仍计入 applied/communicated/interviewing', () => {
+    const closedAfterInterview = makeApp('不合适');
+    closedAfterInterview.progressLevel = 4; // 曾到「面试」
+    const closedAtIntention = makeApp('不合适'); // 意向阶段就放弃
+    closedAtIntention.progressLevel = 0;
+
+    const stats = calcApplicationStats([closedAfterInterview, closedAtIntention]);
+    expect(stats.applied).toBe(1);
+    expect(stats.communicated).toBe(1);
+    expect(stats.interviewing).toBe(1);
+    expect(stats.closed).toBe(2);
+  });
+
+  it('缺 progressLevel 的旧数据按当前状态回填口径（不合适视为 0）', () => {
+    const stats = calcApplicationStats([makeApp('已沟通'), makeApp('不合适')]);
+    expect(stats.applied).toBe(1);
+    expect(stats.communicated).toBe(1);
   });
 });

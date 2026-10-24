@@ -34,12 +34,37 @@ describe('useApplicationsStore', () => {
     store.setStatus(app.id, '约面');
     const updated = store.list[0];
     expect(updated.status).toBe('约面');
+    expect(updated.progressLevel).toBe(3);
     const notes = updated.notes;
     expect(notes[notes.length - 1].text).toBe('状态：意向 → 约面');
 
-    // 同状态重复设置不产生记录
+    // 同状态重复设置不产生记录，进度不回退
     store.setStatus(app.id, '约面');
     expect(store.list[0].notes).toHaveLength(2);
+
+    // 关闭为不合适后，历史进度保留（漏斗历史口径）
+    store.setStatus(app.id, '不合适');
+    const closed = store.list[0];
+    expect(closed.status).toBe('不合适');
+    expect(closed.progressLevel).toBe(3);
+  });
+
+  it('旧数据缺 progressLevel 时按时间线回填历史进度', () => {
+    localStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify([{
+      id: 'old-1', company: 'A', position: 'P', channel: 'boss',
+      status: '不合适', jd: '', link: '', resumeTitle: '',
+      createdAt: '2026-10-01T00:00:00Z', updatedAt: '2026-10-01T00:00:00Z',
+      notes: [
+        { at: '2026-10-01T00:00:00Z', text: '创建记录' },
+        { at: '2026-10-02T00:00:00Z', text: '状态：意向 → 已投递' },
+        { at: '2026-10-03T00:00:00Z', text: '状态：已投递 → 不合适' },
+      ],
+    }]));
+    setActivePinia(createPinia());
+    const store = useApplicationsStore();
+
+    expect(store.list[0].progressLevel).toBe(1);
+    expect(store.stats.applied).toBe(1);
   });
 
   it('删除与备注', () => {

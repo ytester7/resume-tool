@@ -41,7 +41,9 @@ npm run mcp:login
 - **风控即停**：探测到验证码 / 安全页 / 登录墙立即终止当前操作并提示，**绝不自动重试、绝不绕过**
 - **限速**：对 zhipin.com 的每次导航间隔 9–15 秒随机抖动，单会话上限 60 次请求
 - **域名白名单**：只允许访问 `https://www.zhipin.com`，其他任何 URL 一律拒绝
-- **仅回环监听**：HTTP API 只绑定 127.0.0.1，不要把端口转发到公网或局域网
+- **仅回环监听 + 来源校验**：HTTP API 只绑定 127.0.0.1，且只接受本机开发地址
+  （localhost / 127.0.0.1 任意端口）或 `file://` 页面的请求——任意外部网页无法借你的登录态调用本进程；
+  不要把端口转发到公网或局域网
 - **浏览器可见**：抓取使用可见浏览器窗口（最小化在任务栏），用户随时能看到它在做什么
 
 ## 风险声明
@@ -56,14 +58,15 @@ Boss直聘没有官方开放 API，本进程基于浏览器自动化读取**你�
 
 ## MCP 接入（可选）
 
-外部 Agent（Claude Desktop 等）可通过 stdio 使用工具。在客户端配置中添加：
+外部 Agent（Claude Desktop 等）通过 **stdio 模式**使用工具。在客户端配置中添加
+（注意 `--stdio` 参数；该模式下进程只走 stdin/stdout 的 JSON-RPC，不启动 HTTP 服务）：
 
 ```json
 {
   "mcpServers": {
     "resume-tool-boss": {
       "command": "node",
-      "args": ["<本仓库绝对路径>/mcp-server/src/server.js"]
+      "args": ["<本仓库绝对路径>/mcp-server/src/server.js", "--stdio"]
     }
   }
 }

@@ -51,6 +51,14 @@ function storageKey(tabId: string): string {
   return STORAGE_KEY_PREFIX + tabId;
 }
 
+/** 持久化消息的形状校验：坏数据逐条剔除（与投递台账同款防御） */
+function isValidMessage(m: unknown): m is Message {
+  return !!m && typeof m === 'object'
+    && typeof (m as Message).id === 'number'
+    && ((m as Message).role === 'user' || (m as Message).role === 'assistant')
+    && typeof (m as Message).content === 'string';
+}
+
 function persist(): void {
   const tabId = tabs.active?.id;
   if (!tabId) return;
@@ -67,9 +75,24 @@ function persist(): void {
 function loadFor(tabId: string): void {
   try {
     const raw = localStorage.getItem(storageKey(tabId));
-    messages.value = raw ? (JSON.parse(raw) as Message[]) : [];
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    const valid = Array.isArray(parsed) ? parsed.filter(isValidMessage) : [];
+    messages.value = valid.slice(-MAX_PERSISTED);
   } catch {
     messages.value = [];
+  }
+  // 新消息 id 从已加载的最大值继续，避免与恢复的消息 key 冲突
+  msgId = messages.value.reduce((max, m) => Math.max(max, m.id), 0);
+}
+
+/** Tab 关闭后遗留的会话存储一并清掉，不留孤儿键 */
+function sweepOrphanStorage(): void {
+  const liveIds = new Set(tabs.tabs.map((t) => t.id));
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(STORAGE_KEY_PREFIX) && !liveIds.has(key.slice(STORAGE_KEY_PREFIX.length))) {
+      localStorage.removeItem(key);
+    }
   }
 }
 
@@ -79,6 +102,7 @@ function switchTab(): void {
   persistedTabId = tabId;
   if (tabId) loadFor(tabId);
   else messages.value = [];
+  sweepOrphanStorage();
 }
 
 watch(() => tabs.active?.id, switchTab, { immediate: true });

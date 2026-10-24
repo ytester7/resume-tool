@@ -1,5 +1,6 @@
 import { Throttle } from './throttle.js';
 import { detectPageState, riskError } from './detect.js';
+import { appError } from './errors.js';
 import { parseJobDetail, parseSearchResults } from './extract.js';
 import { BROWSER_PROFILE_DIR, isAllowedZhipinUrl, logLine } from './paths.js';
 
@@ -60,12 +61,8 @@ async function withThrottledPage(handler) {
 
   const ctx = await getContext();
   const page = ctx.pages()[0] ?? await ctx.newPage();
-  try {
-    return await handler(page);
-  } finally {
-    // 不关闭 context（保持登录态），只复用页面
-    await page.waitForLoadState('domcontentloaded').catch(() => {});
-  }
+  // 不关闭 context（保持登录态），只复用页面
+  return handler(page);
 }
 
 function assertPageSafe(page) {
@@ -79,9 +76,7 @@ function assertPageSafe(page) {
  */
 export async function fetchJd(url) {
   if (!isAllowedZhipinUrl(url)) {
-    const err = new Error('只允许 https://www.zhipin.com 的岗位详情链接');
-    err.code = 'BAD_REQUEST';
-    throw err;
+    throw appError('只允许 https://www.zhipin.com 的岗位详情链接', 'BAD_REQUEST');
   }
   return withThrottledPage(async (page) => {
     await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -101,9 +96,7 @@ export async function fetchJd(url) {
       Object.assign(detail, retry);
     }
     if (!detail.jd) {
-      const err = new Error('没解析到职位描述：页面结构可能已变化，或该链接需要登录后查看');
-      err.code = 'PARSE_EMPTY';
-      throw err;
+      throw appError('没解析到职位描述：页面结构可能已变化，或该链接需要登录后查看', 'PARSE_EMPTY');
     }
     logLine(`fetch-jd ok: ${detail.company} ${detail.position}`);
     return { ...detail, url: page.url() };
@@ -129,9 +122,7 @@ export async function searchJobs({ query, city = '全国', page = 1 }) {
     const jobs = parseSearchResults(html);
     logLine(`search-jobs "${query}" (city=${city}, page=${page}): ${jobs.length} results`);
     if (jobs.length === 0) {
-      const err = new Error('没有解析到职位卡片：页面结构可能已变化，或触发风控');
-      err.code = 'PARSE_EMPTY';
-      throw err;
+      throw appError('没有解析到职位卡片：页面结构可能已变化，或触发风控', 'PARSE_EMPTY');
     }
     return jobs.slice(0, 20);
   });
